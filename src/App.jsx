@@ -1,16 +1,29 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React from "react";  
 
-function App() {
+import Navbar from "./components/Navbar";
+import Hero from "./components/hero";
+import Problem from "./components/problem";
+import Solution from "./components/Solution";
+import Features from "./components/features";
+import HowItWorks from "./components/Howitworks";
+import Screens from "./components/screen";
+import Benefits from "./components/benifits";
+import CTA from "./components/CTA";
+import Footer from "./components/footer";
+
+export default function App() {
   return (
-    <div className="h-screen flex items-center justify-center bg-red-500">
-      <h1 className="text-4xl font-bold text-white">
-        Tailwind is Working! 🎉
-      </h1>
+    <div className="bg-gray-50 text-gray-800">
+      <Navbar />
+      <Hero />
+      <Problem />
+      <Solution />
+      <Features />
+      <HowItWorks />
+      <Screens />
+      <Benefits />
+      <CTA />
+      <Footer />
     </div>
   );
 }
-
-export default App;
