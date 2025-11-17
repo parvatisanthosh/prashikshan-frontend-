@@ -1,29 +1,42 @@
 import React from "react";  
 
-import Navbar from "./components/Navbar";
+import Navbar from "./components/navbar";
 import Hero from "./components/hero";
 import Problem from "./components/problem";
-import Solution from "./components/Solution";
+import Solution from "./components/solution";
 import Features from "./components/features";
-import HowItWorks from "./components/Howitworks";
+import HowItWorks from "./components/howitworks";
 import Screens from "./components/screen";
 import Benefits from "./components/benifits";
-import CTA from "./components/CTA";
+import CTA from "./components/cta";
 import Footer from "./components/footer";
+import Trending from "./components/trending";
+import Mentorship from "./components/mentorship";
+import Internships from "./components/internships";
+import JoinCollege from "./components/joincollege";
+import Freshers from "./components/freshers";
+import Feedback from "./components/feedback";
+import Companies from "./components/companies";
+import About from "./components/about";
+
+
+
+
 
 export default function App() {
   return (
-    <div className="bg-gray-50 text-gray-800">
+    <div className="bg-white text-gray-800 min-h-screen">
       <Navbar />
       <Hero />
-      <Problem />
-      <Solution />
-      <Features />
-      <HowItWorks />
-      <Screens />
-      <Benefits />
-      <CTA />
-      <Footer />
+      <Trending />
+      <Mentorship />
+      <Internships />
+      <JoinCollege />
+      <Freshers />
+      <Feedback />
+    <Companies />
+    <About />
+    <Footer />
     </div>
   );
 }
