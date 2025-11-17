@@ -22,14 +22,7 @@ import About from "./components/about";
 import LandingPage from "./pages/LandingPage.jsx";
 import StudentSignUpPage from "./pages/StudentSignupPage.jsx";
 import StudentLoginPage from "./pages/StudentLoginPage.jsx";
-
-
-
-
-
-export default function App() {
-  return (
-    <div className="bg-white text-gray-800 min-h-screen">
+{/* <div className="bg-white text-gray-800 min-h-screen">
       <Navbar />
       <Hero />
       <Trending />
@@ -41,6 +34,19 @@ export default function App() {
     <Companies />
     <About />
     <Footer />
+    <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/studentsignup" element={<StudentSignUpPage />} />
+        <Route path="/studentlogin" element={<StudentLoginPage />} />
+    </Routes>
+    </div> */}
+
+
+
+
+export default function App() {
+  return (
+    <div className="bg-white text-gray-800 min-h-screen">
     <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/studentsignup" element={<StudentSignUpPage />} />
