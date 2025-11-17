@@ -1,4 +1,5 @@
-import React from "react";  
+import React from "react";
+import { Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/navbar";
 import Hero from "./components/hero";
@@ -18,6 +19,9 @@ import Freshers from "./components/freshers";
 import Feedback from "./components/feedback";
 import Companies from "./components/companies";
 import About from "./components/about";
+import LandingPage from "./pages/LandingPage.jsx";
+import StudentSignUpPage from "./pages/StudentSignupPage.jsx";
+import StudentLoginPage from "./pages/StudentLoginPage.jsx";
 
 
 
@@ -37,6 +41,12 @@ export default function App() {
     <Companies />
     <About />
     <Footer />
+    <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/studentsignup" element={<StudentSignUpPage />} />
+        <Route path="/studentlogin" element={<StudentLoginPage />} />
+    </Routes>
     </div>
   );
 }
+
