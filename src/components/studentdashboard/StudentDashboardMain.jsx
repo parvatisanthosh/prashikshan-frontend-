@@ -1,3 +1,4 @@
+// src/pages/StudentDashboardMain.jsx
 import React, { useState } from "react";
 import Internships from "../studentdashboard/Internships.jsx";
 import Courses from "./Courses.jsx";
@@ -8,13 +9,17 @@ import Trending from "../landingpage/trending.jsx";
  * - Donut charts (SVG)
  * - CGPA / Credits
  * - Courses completed visual
- * - Recent activities & logs (3 shown, show more)
+ * - Recent activities & logs (3 shown, show more -> navigates to dedicated page)
  * - Browse internships (3 cards)
  * - View courses (3 cards)
  * - Active mentor + Classes
  *
  * Frontend-only. Replace mock data with API calls later.
  */
+
+function sanitizeId(s) {
+  return String(s || "").replace(/[^a-zA-Z0-9-_]/g, "-").replace(/-+/g, "-").toLowerCase();
+}
 
 function Donut({
   size = 120,
@@ -29,12 +34,13 @@ function Donut({
   const percent = Math.max(0, Math.min(1, value / max));
   const dash = circumference * percent;
   const dashOffset = circumference - dash;
+  const id = `g-${sanitizeId(label)}`;
 
   return (
     <div className="flex flex-col items-center">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <defs>
-          <linearGradient id={`g-${label}`} x1="0" x2="1">
+          <linearGradient id={id} x1="0" x2="1">
             <stop offset="0%" stopColor={color} stopOpacity="0.95" />
             <stop offset="100%" stopColor={color} stopOpacity="0.6" />
           </linearGradient>
@@ -42,17 +48,12 @@ function Donut({
 
         <g transform={`translate(${size / 2}, ${size / 2})`}>
           {/* background ring */}
-          <circle
-            r={radius}
-            fill="none"
-            stroke="#e6eef9"
-            strokeWidth={stroke}
-          />
+          <circle r={radius} fill="none" stroke="#e6eef9" strokeWidth={stroke} />
           {/* progress ring */}
           <circle
             r={radius}
             fill="none"
-            stroke={`url(#g-${label})`}
+            stroke={`url(#${id})`}
             strokeWidth={stroke}
             strokeDasharray={`${dash} ${circumference}`}
             strokeDashoffset={dashOffset}
@@ -62,9 +63,7 @@ function Donut({
         </g>
       </svg>
       <div className="mt-2 text-center">
-        <div className="text-lg font-semibold">
-          {Math.round(percent * 100)}%
-        </div>
+        <div className="text-lg font-semibold">{Math.round(percent * 100)}%</div>
         <div className="text-xs text-gray-500">{label}</div>
       </div>
     </div>
@@ -108,24 +107,9 @@ export default function StudentDashboardMain({ onNavigate }) {
   const [coursesCompleted] = useState({
     percent: 55,
     list: [
-      {
-        id: "cc1",
-        title: "Intro to React",
-        provider: "Coursera",
-        progress: 100,
-      },
-      {
-        id: "cc2",
-        title: "Data Analysis Basics",
-        provider: "NPTEL",
-        progress: 80,
-      },
-      {
-        id: "cc3",
-        title: "Soft Skills Workshop",
-        provider: "Institute",
-        progress: 40,
-      },
+      { id: "cc1", title: "Intro to React", provider: "Coursera", progress: 100 },
+      { id: "cc2", title: "Data Analysis Basics", provider: "NPTEL", progress: 80 },
+      { id: "cc3", title: "Soft Skills Workshop", provider: "Institute", progress: 40 },
     ],
   });
 
@@ -137,79 +121,28 @@ export default function StudentDashboardMain({ onNavigate }) {
   ]);
 
   const [recentLogs] = useState([
-    {
-      id: "rl1",
-      title: "Project X - Requirement gathering",
-      meta: "2h · Oct 22",
-    },
+    { id: "rl1", title: "Project X - Requirement gathering", meta: "2h · Oct 22" },
     { id: "rl2", title: "UI: Login page", meta: "3h · Oct 18" },
     { id: "rl3", title: "Backend: auth design", meta: "4h · Oct 12" },
     { id: "rl4", title: "Deployment prep", meta: "1h · Oct 05" },
   ]);
 
   const [internships] = useState([
-    {
-      id: "i1",
-      title: "Frontend Intern",
-      org: "Startup A",
-      stipend: "10k/mo",
-      remote: true,
-    },
-    {
-      id: "i2",
-      title: "Data Intern",
-      org: "Corp B",
-      stipend: "12k/mo",
-      remote: false,
-    },
-    {
-      id: "i3",
-      title: "QA Intern",
-      org: "SoftX",
-      stipend: "8k/mo",
-      remote: true,
-    },
-    {
-      id: "i4",
-      title: "Research Intern",
-      org: "Lab Y",
-      stipend: "15k/mo",
-      remote: false,
-    },
+    { id: "i1", title: "Frontend Intern", org: "Startup A", stipend: "10k/mo", remote: true },
+    { id: "i2", title: "Data Intern", org: "Corp B", stipend: "12k/mo", remote: false },
+    { id: "i3", title: "QA Intern", org: "SoftX", stipend: "8k/mo", remote: true },
+    { id: "i4", title: "Research Intern", org: "Lab Y", stipend: "15k/mo", remote: false },
   ]);
 
   const [courses] = useState([
     { id: "c1", title: "Intro to React", provider: "Coursera", price: "Free" },
-    {
-      id: "c2",
-      title: "Data Science Basics",
-      provider: "NPTEL",
-      price: "Free",
-    },
+    { id: "c2", title: "Data Science Basics", provider: "NPTEL", price: "Free" },
     { id: "c3", title: "Advanced JS", provider: "Udemy", price: "Paid" },
-    {
-      id: "c4",
-      title: "Professional Skills",
-      provider: "Institute",
-      price: "Govt",
-    },
+    { id: "c4", title: "Professional Skills", provider: "Institute", price: "Govt" },
   ]);
 
-  const [mentor] = useState({
-    name: "Dr. R. Sharma",
-    role: "Industry Mentor",
-    nextSession: "No upcoming sessions",
-  });
-  const [classes] = useState([
-    { id: "cls1", name: "DSA - CS101" },
-    { id: "cls2", name: "OS - CS201" },
-  ]);
-
-  // UI state
-  const [showMoreActivities, setShowMoreActivities] = useState(false);
-  const [showMoreLogs, setShowMoreLogs] = useState(false);
-  const [showMoreInternships, setShowMoreInternships] = useState(false);
-  const [showMoreCourses, setShowMoreCourses] = useState(false);
+  const [mentor] = useState({ name: "Dr. R. Sharma", role: "Industry Mentor", nextSession: "No upcoming sessions" });
+  const [classes] = useState([{ id: "cls1", name: "DSA - CS101" }, { id: "cls2", name: "OS - CS201" }]);
 
   const nav = (route, payload) => {
     if (typeof onNavigate === "function") return onNavigate(route, payload);
@@ -224,46 +157,21 @@ export default function StudentDashboardMain({ onNavigate }) {
           {/* Donuts row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white rounded-xl shadow p-4 flex items-center justify-center">
-              <Donut
-                size={120}
-                stroke={14}
-                value={activitiesDone.value}
-                max={activitiesDone.max}
-                label="Activities Done"
-                color="#10B981"
-              />
+              <Donut size={120} stroke={14} value={activitiesDone.value} max={activitiesDone.max} label="Activities Done" color="#10B981" />
             </div>
             <div className="bg-white rounded-xl shadow p-4 flex items-center justify-center">
-              <Donut
-                size={120}
-                stroke={14}
-                value={logsCreated.value}
-                max={logsCreated.max}
-                label="Logs Created"
-                color="#3B82F6"
-              />
+              <Donut size={120} stroke={14} value={logsCreated.value} max={logsCreated.max} label="Logs Created" color="#3B82F6" />
             </div>
 
             <div className="bg-white rounded-xl shadow p-4 flex flex-col justify-center">
               <div className="text-sm text-gray-500">CGPA</div>
               <div className="mt-2 text-3xl font-semibold">{cgpa.cgpa}</div>
-              <div className="text-xs text-gray-500 mt-1">
-                {cgpa.creditsEarned} / {cgpa.creditsTotal} credits
-              </div>
+              <div className="text-xs text-gray-500 mt-1">{cgpa.creditsEarned} / {cgpa.creditsTotal} credits</div>
               <div className="mt-3">
                 <div className="h-2 bg-gray-100 rounded overflow-hidden">
-                  <div
-                    className="h-full bg-blue-600"
-                    style={{
-                      width: `${
-                        (cgpa.creditsEarned / cgpa.creditsTotal) * 100
-                      }%`,
-                    }}
-                  />
+                  <div className="h-full bg-blue-600" style={{ width: `${(cgpa.creditsEarned / cgpa.creditsTotal) * 100}%` }} />
                 </div>
-                <div className="text-xs text-gray-400 mt-2">
-                  Progress to degree
-                </div>
+                <div className="text-xs text-gray-400 mt-2">Progress to degree</div>
               </div>
             </div>
           </div>
@@ -272,9 +180,7 @@ export default function StudentDashboardMain({ onNavigate }) {
           <div className="bg-white rounded-xl shadow p-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">Courses Completed</h3>
-              <div className="text-xs text-gray-500">
-                {coursesCompleted.percent}% complete
-              </div>
+              <div className="text-xs text-gray-500">{coursesCompleted.percent}% complete</div>
             </div>
 
             <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -284,14 +190,9 @@ export default function StudentDashboardMain({ onNavigate }) {
                   <div className="text-xs text-gray-500">{c.provider}</div>
                   <div className="mt-2">
                     <div className="h-2 bg-gray-100 rounded overflow-hidden">
-                      <div
-                        className="h-full bg-green-500"
-                        style={{ width: `${c.progress}%` }}
-                      />
+                      <div className="h-full bg-green-500" style={{ width: `${c.progress}%` }} />
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {c.progress}%
-                    </div>
+                    <div className="text-xs text-gray-500 mt-1">{c.progress}%</div>
                   </div>
                 </div>
               ))}
@@ -302,27 +203,12 @@ export default function StudentDashboardMain({ onNavigate }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-white rounded-xl shadow p-4">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="font-semibold text-gray-900">
-                  Recent Activities
-                </h4>
-                <button
-                  onClick={() => setShowMoreActivities((s) => !s)}
-                  className="text-sm text-blue-600"
-                >
-                  {showMoreActivities ? "Show less" : "Show more"}
-                </button>
+                <h4 className="font-semibold text-gray-900">Recent Activities</h4>
+                <button onClick={() => nav('activities')} className="text-sm text-blue-600">Show more</button>
               </div>
               <div className="space-y-2">
-                {(showMoreActivities
-                  ? recentActivities
-                  : recentActivities.slice(0, 3)
-                ).map((a) => (
-                  <ItemRow
-                    key={a.id}
-                    title={a.title}
-                    meta={a.meta}
-                    onView={() => nav("activities", { id: a.id })}
-                  />
+                {recentActivities.slice(0, 3).map((a) => (
+                  <ItemRow key={a.id} title={a.title} meta={a.meta} onView={() => nav("activities", { id: a.id })} />
                 ))}
               </div>
             </div>
@@ -330,24 +216,12 @@ export default function StudentDashboardMain({ onNavigate }) {
             <div className="bg-white rounded-xl shadow p-4">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-semibold text-gray-900">Recent Logs</h4>
-                <button
-                  onClick={() => setShowMoreLogs((s) => !s)}
-                  className="text-sm text-blue-600"
-                >
-                  {showMoreLogs ? "Show less" : "Show more"}
-                </button>
+                <button onClick={() => nav('logbook')} className="text-sm text-blue-600">Show more</button>
               </div>
               <div className="space-y-2">
-                {(showMoreLogs ? recentLogs : recentLogs.slice(0, 3)).map(
-                  (l) => (
-                    <ItemRow
-                      key={l.id}
-                      title={l.title}
-                      meta={l.meta}
-                      onView={() => nav("logbook", { id: l.id })}
-                    />
-                  )
-                )}
+                {recentLogs.slice(0, 3).map((l) => (
+                  <ItemRow key={l.id} title={l.title} meta={l.meta} onView={() => nav("logbook", { id: l.id })} />
+                ))}
               </div>
             </div>
           </div>
@@ -355,88 +229,49 @@ export default function StudentDashboardMain({ onNavigate }) {
 
         {/* RIGHT column: Mentor, Classes, Quick stats */}
         <aside className="space-y-6">
-          <SmallCard
-            title="Active Mentor"
-            value={mentor.name}
-            hint={mentor.role}
-          >
+          <SmallCard title="Active Mentor" value={mentor.name} hint={mentor.role}>
             <div className="text-right">
-              <button
-                onClick={() => nav("mentor")}
-                className="px-3 py-1 rounded bg-blue-600 text-white text-sm"
-              >
-                Book
-              </button>
+              <button onClick={() => nav("mentor")} className="px-3 py-1 rounded bg-blue-600 text-white text-sm">Book</button>
             </div>
           </SmallCard>
 
-          <SmallCard
-            title="Classes"
-            value={`${classes.length} joined`}
-            hint="Join using a code"
-          >
+          <SmallCard title="Classes" value={`${classes.length} joined`} hint="Join using a code">
             <div className="text-right">
-              <button
-                onClick={() => nav("classes")}
-                className="px-3 py-1 rounded bg-gray-100 text-sm"
-              >
-                Open
-              </button>
+              <button onClick={() => nav("classes")} className="px-3 py-1 rounded bg-gray-100 text-sm">Open</button>
             </div>
           </SmallCard>
 
           <div className="bg-white rounded-xl shadow p-4">
             <h4 className="font-semibold text-gray-900 mb-2">Quick Stats</h4>
-            <div className="text-sm text-gray-600">
-              Total internships applied: <span className="font-medium">3</span>
-            </div>
-            <div className="text-sm text-gray-600 mt-1">
-              Certificates earned: <span className="font-medium">2</span>
-            </div>
-            <div className="text-sm text-gray-600 mt-1">
-              Badges: <span className="font-medium">4</span>
-            </div>
+            <div className="text-sm text-gray-600">Total internships applied: <span className="font-medium">3</span></div>
+            <div className="text-sm text-gray-600 mt-1">Certificates earned: <span className="font-medium">2</span></div>
+            <div className="text-sm text-gray-600 mt-1">Badges: <span className="font-medium">4</span></div>
           </div>
 
           <div className="bg-white rounded-xl shadow p-4">
-            <h4 className="font-semibold text-gray-900 mb-2">
-              Classes (quick)
-            </h4>
+            <h4 className="font-semibold text-gray-900 mb-2">Classes (quick)</h4>
             <div className="space-y-2">
               {classes.map((c) => (
-                <div
-                  key={c.id}
-                  className="flex items-center justify-between p-2 rounded hover:bg-gray-50"
-                >
+                <div key={c.id} className="flex items-center justify-between p-2 rounded hover:bg-gray-50">
                   <div className="text-sm text-gray-800">{c.name}</div>
-                  <button
-                    onClick={() => nav("classes", { id: c.id })}
-                    className="text-sm text-gray-400"
-                  >
-                    ›
-                  </button>
+                  <button onClick={() => nav("classes", { id: c.id })} className="text-sm text-gray-400">›</button>
                 </div>
               ))}
             </div>
             <div className="mt-3">
-              <button
-                onClick={() => nav("classes")}
-                className="w-full px-3 py-2 rounded bg-blue-600 text-white text-sm"
-              >
-                Join class
-              </button>
+              <button onClick={() => nav("classes")} className="w-full px-3 py-2 rounded bg-blue-600 text-white text-sm">Join class</button>
             </div>
           </div>
         </aside>
       </div>
+
       <div className="mt-3">
-            <Internships />
+        <Internships />
       </div>
 
-        <div className="px-6 md:px-10 py-16 bg-white transition-colors rounded-xl shadow-md mt-6">
-            <Courses />
+      <div className="px-6 md:px-10 py-16 bg-white transition-colors rounded-xl shadow-md mt-6">
+        <Courses />
       </div>
-      
       
     </div>
   );

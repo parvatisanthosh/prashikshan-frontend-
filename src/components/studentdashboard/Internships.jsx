@@ -34,9 +34,12 @@ export default function Internships() {
   return (
     <section className="px-6 md:px-10 py-16 bg-white transition-colors rounded-xl shadow-md">
       <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
         <h2 className="text-3xl font-bold text-gray-900 mb-2">
           Internship Openings
         </h2>
+        <p className="underline cursor-pointer text-blue-600">show more</p>
+        </div>
         <p className="text-gray-600 m-10">
 
         </p>

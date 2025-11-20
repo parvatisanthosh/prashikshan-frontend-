@@ -47,17 +47,17 @@ export default function Trending() {
   return (
     <section className="px-6 md:px-10 py-16 bg-slate-50 transition-colors">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">
+        <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2">
           Trending Now — Learn In-Demand Skills
         </h2>
-        <p className="text-gray-600 mb-6">
-          Popular courses — paid & free — to make you internship-ready.
-        </p>
+        <p className="underline cursor-pointer text-blue-600">show more</p>
+        </div>
         <div className="grid md:grid-cols-3 gap-6">
           {courses.map((c) => (
             <div
               key={c.id}
-              className="bg-gray-50 p-6 rounded-xl shadow hover:shadow-xl transition"
+              className="p-6 rounded-xl shadow hover:shadow-xl transition"
             >
               <div className="flex justify-between items-start">
                 <div>
