@@ -6,6 +6,10 @@ import StudentSignUpPage from "./pages/StudentSignupPage.jsx";
 import StudentLoginPage from "./pages/StudentLoginPage.jsx";
 import StudentDashboard from "./pages/StudentDashboard.jsx";
 import LogbookPage from "./pages/LogBook.jsx";
+import ActivityTrackerPage from "./pages/StudentActivityTracker.jsx";
+
+
+
 import RoleSelectPage from "./pages/RoleSelectPage.jsx";
 import FacultyLoginPage from "./pages/FacultyLoginPage.jsx"; 
 import FacultySignupPage from "./pages/FacultySignupPage.jsx";
@@ -23,15 +27,10 @@ export default function App() {
         <Route path="/studentlogin" element={<StudentLoginPage />} />
         <Route path="/studentdashboard" element={<StudentDashboard />} />
         <Route path="/logbook" element={<LogbookPage />} />
-        
-        {/* Faculty Routes */}
+        <Route path="/activitytracker" element={<ActivityTrackerPage />} />
         <Route path="/facultylogin" element={<FacultyLoginPage />} /> 
         <Route path="/facultysignup" element={<FacultySignupPage />} />
-        
-        {/* Faculty Dashboard Route */}
         <Route path="/faculty/dashboard" element={<FacultyDashboard />} /> 
-
-        {/* Add more routes for company, admin login/signup as needed */}
       </Routes>
     </div>
   );

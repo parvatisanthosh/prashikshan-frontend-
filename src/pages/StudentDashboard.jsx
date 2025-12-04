@@ -24,7 +24,7 @@ export default function StudentDashboard() {
       />
 
       {/* IMPORTANT: add top padding so fixed navbar doesn't cover content */}
-      <div className="pt-20">
+      <div className="pt-20 pb-20">
 
       </div>
 

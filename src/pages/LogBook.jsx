@@ -1,11 +1,21 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import Navbar from "../components/studentdashboard/Navbar.jsx";
+import Sidebar from "../components/studentdashboard/sidebar.jsx";
 
 // LogbookPage.jsx — corrected, full component
 // Added: TodoList feature (offline-first, localStorage).
 // Updated: Mobile-first responsive improvements (better layout, touch targets, modal behavior)
 
 export default function LogbookPage() {
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+    function handleNavigate(route) {
+      // wire to your router here. Example: react-router -> navigate(`/${route}`)
+      // For now we use hash-nav fallback:
+      window.location.hash = `#/${route}`;
+    }
+
   // --- Data model ---
   const [logs, setLogs] = useState(() => {
     try {
@@ -399,8 +409,24 @@ export default function LogbookPage() {
   // --- Render ---
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="mb-6">
-        <Navbar />
+      <div className="">
+        <Navbar
+                user={{ name: "Asha Verma" }}
+                onToggleSidebar={() => setSidebarOpen(true)}
+                onSearch={(q) => alert("Search: " + q)}
+                onNavigate={(r) => handleNavigate(r)}
+              />
+        
+              {/* IMPORTANT: add top padding so fixed navbar doesn't cover content */}
+              <div className="pt-5">
+        
+              </div>
+        
+              <Sidebar
+                open={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+                onNavigate={(route) => handleNavigate(route)}
+              />
       </div>
 
       <div className="p-4 sm:p-6 max-w-3xl md:max-w-6xl mx-auto mt-8">
@@ -459,7 +485,7 @@ export default function LogbookPage() {
         <div className="mb-4 flex gap-2 items-center flex-wrap">
           <button onClick={() => setActiveTagFilter("")} className={`px-3 py-1 rounded ${!activeTagFilter ? "bg-blue-600 text-white" : "bg-white border"}`}>All</button>
           {allTags.map((t) => (
-            <button key={t} onClick={() => setActiveTagFilter(t)} className={`px-3 py-1 rounded ${activeTagFilter === t ? "bg-indigo-600 text-white" : "bg-white border"}`}>#{t}</button>
+            <button key={t} onClick={() => setActiveTagFilter(t)} className={`px-3 py-1 rounded ${activeTagFilter === t ? "bg-blue-600 text-white" : "bg-white border"}`}>#{t}</button>
           ))}
         </div>
 
@@ -560,7 +586,7 @@ export default function LogbookPage() {
 
               <div className="flex items-center gap-2 mb-3 flex-wrap">
                 <button onClick={() => setTodoFilter("all")} className={`px-2 py-1 text-xs rounded ${todoFilter === "all" ? "bg-blue-600 text-white" : "bg-white border"}`}>All</button>
-                <button onClick={() => setTodoFilter("active")} className={`px-2 py-1 text-xs rounded ${todoFilter === "active" ? "bg-indigo-600 text-white" : "bg-white border"}`}>Active</button>
+                <button onClick={() => setTodoFilter("active")} className={`px-2 py-1 text-xs rounded ${todoFilter === "active" ? "bg-blue-600 text-white" : "bg-white border"}`}>Active</button>
                 <button onClick={() => setTodoFilter("completed")} className={`px-2 py-1 text-xs rounded ${todoFilter === "completed" ? "bg-green-600 text-white" : "bg-white border"}`}>Done</button>
                 <button onClick={clearCompletedTodos} className="ml-auto text-xs text-red-600">Clear done</button>
               </div>
@@ -589,7 +615,7 @@ export default function LogbookPage() {
                   <input value={editingTodoText} onChange={(e) => setEditingTodoText(e.target.value)} className="w-full border rounded px-3 py-2 mb-2" />
                   <div className="flex gap-2 justify-end">
                     <button onClick={cancelEditTodo} className="px-3 py-2 border rounded text-sm">Cancel</button>
-                    <button onClick={saveEditTodo} className="px-3 py-2 bg-indigo-600 text-white rounded text-sm">Save</button>
+                    <button onClick={saveEditTodo} className="px-3 py-2 bg-blue-600 text-white rounded text-sm">Save</button>
                   </div>
                 </div>
               )}
@@ -649,7 +675,7 @@ export default function LogbookPage() {
                     <button onClick={() => { if (!confirm("Move this to trash?")) return; softDelete(editingId); setIsModalOpen(false); }} className="px-3 py-2 border rounded text-sm text-red-600">Trash</button>
                   )}
                   <button onClick={() => { clearDraft(); setIsModalOpen(false); }} className="px-3 py-2 border rounded text-sm">Cancel</button>
-                  <button onClick={handleSave} className="px-4 py-2 bg-indigo-600 text-white rounded">Save</button>
+                  <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
                   {editingId && (
                     <button onClick={() => submitForReview(editingId)} className="px-4 py-2 bg-yellow-100 rounded">Submit</button>
                   )}

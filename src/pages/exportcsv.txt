@@ -1,0 +1,40 @@
+function exportCSV() {
+  const rows = activities.map((a) => ({
+    title: a.title,
+    date: a.date,
+    organiser: a.organiser,
+    location: a.location,
+    topic: a.topic,
+    tags: (a.tags || []).join(";"),
+    notes: a.notes?.replace(/\n/g, " ") || "",
+    attachments: (a.attachments || []).map((x) => x.name).join(";"),
+  }));
+
+  // If no rows, return early
+  if (rows.length === 0) {
+    alert("No data to export");
+    return;
+  }
+
+  const header = Object.keys(rows[0]).join(",");
+
+  const lines = rows.map((r) =>
+    Object.values(r)
+      .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+      .join(",")
+  );
+
+  const csv = [header, ...lines].join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `activities-${new Date().toISOString()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  URL.revokeObjectURL(url);
+}

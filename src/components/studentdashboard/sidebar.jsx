@@ -1,5 +1,6 @@
-// src/components/Sidebar.jsx
-import React, { useEffect } from "react";
+// Sidebar.jsx
+import React, { useEffect, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 /**
  * Sidebar (slides in from right)
@@ -7,17 +8,36 @@ import React, { useEffect } from "react";
  * Props:
  * - open: boolean
  * - onClose: () => void
- * - onNavigate: (route: string) => void   (optional; defaults to hash navigation)
+ * - onNavigate: (route: string) => void   (optional; defaults to react-router navigate)
  * - user: { name: string, avatarUrl?: string } (optional)
  *
- * Links call onNavigate(route) and then onClose().
+ * Notes:
+ * - Uses your app paths (/, /logbook, /activitytracker, /studentdashboard, etc).
+ * - nav items that point to subsections of dashboard use hash fragments.
  */
 export default function Sidebar({
   open,
   onClose,
-  onNavigate = (route) => (window.location.hash = "#/" + route),
+  onNavigate: onNavigateProp,
   user = { name: "Student Name", avatarUrl: "" },
 }) {
+  // router hooks (used only if onNavigate prop not provided)
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // chosen navigation function
+  const navigateFn = useMemo(() => {
+    if (typeof onNavigateProp === "function") return (to) => onNavigateProp(to);
+    return (to) => {
+      // support absolute path strings and hash fragments
+      if (typeof to === "string") {
+        navigate(to);
+      } else if (typeof to === "object" && to !== null) {
+        navigate(to);
+      }
+    };
+  }, [onNavigateProp, navigate]);
+
   // close on ESC
   useEffect(() => {
     if (!open) return;
@@ -28,20 +48,43 @@ export default function Sidebar({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  const navItem = (label, route, opts = {}) => (
-    <button
-      key={label}
-      onClick={() => {
-        typeof onNavigate === "function" && onNavigate(route);
-        onClose && onClose();
-      }}
-      className="w-full text-left flex items-center gap-3 py-3 px-3 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400"
-    >
-      
-      <span className="font-medium text-gray-800">{label}</span>
-      {opts.badge && <span className="ml-auto text-xs text-gray-500">{opts.badge}</span>}
-    </button>
-  );
+  // helper to render nav item and mark active if location matches
+  const navItem = (label, to, opts = {}) => {
+    const isActive =
+      typeof to === "string"
+        ? // active if same pathname (ignoring trailing slash) or hash matches
+          (() => {
+            try {
+              const url = new URL(to, window.location.origin);
+              const pathMatches =
+                (location.pathname || "/").replace(/\/+$/, "") ===
+                url.pathname.replace(/\/+$/, "");
+              const hashMatches = url.hash ? location.hash === url.hash : false;
+              return pathMatches || hashMatches;
+            } catch {
+              // if 'to' is a hash-only string like "#section" or "/dashboard#x"
+              if (to.startsWith("#")) return location.hash === to;
+              return location.pathname === to;
+            }
+          })()
+        : false;
+
+    return (
+      <button
+        key={label}
+        onClick={() => {
+          navigateFn(to);
+          onClose && onClose();
+        }}
+        className={`w-full text-left flex items-center gap-3 py-3 px-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400
+          ${isActive ? "bg-blue-50 text-blue-700" : "hover:bg-gray-50 text-gray-800"}`}
+        aria-current={isActive ? "page" : undefined}
+      >
+        <span className="font-medium">{label}</span>
+        {opts.badge && <span className="ml-auto text-xs text-gray-500">{opts.badge}</span>}
+      </button>
+    );
+  };
 
   return (
     <div
@@ -72,7 +115,7 @@ export default function Sidebar({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => {
-                  typeof onNavigate === "function" && onNavigate("profile");
+                  navigateFn("/studentdashboard");
                   onClose && onClose();
                 }}
                 className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-gray-50"
@@ -80,7 +123,10 @@ export default function Sidebar({
                 title="Profile"
               >
                 <img
-                  src={user.avatarUrl || `https://api.dicebear.com/6.x/initials/svg?seed=${encodeURIComponent(user.name)}`}
+                  src={
+                    user.avatarUrl ||
+                    `https://api.dicebear.com/6.x/initials/svg?seed=${encodeURIComponent(user.name)}`
+                  }
                   alt={`${user.name} avatar`}
                   className="w-8 h-8 rounded-full border"
                 />
@@ -100,21 +146,22 @@ export default function Sidebar({
 
           {/* content */}
           <nav className="px-3 py-4 space-y-1 overflow-auto">
-            {navItem("Profile", "profile")}
-            {navItem("Logbook", "logbook")}
-            {navItem("Activity Feed", "Activity Feed")}
-            {navItem("Academics", "academics")}
-            {navItem("Certifications", "certifications")}
-            {navItem("Courses", "courses")}
-            {navItem("Mentors", "mentors")}
-            {navItem("Internships", "internships")}
+            {navItem("Home", "/")}
+            {navItem("Profile", "/studentdashboard")}
+            {navItem("Logbook", "/logbook")}
+            {navItem("Activity Feed", "/activitytracker")}
+            {navItem("Academics", "/studentdashboard#academics")}
+            {navItem("Certifications", "/studentdashboard#certifications")}
+            {navItem("Courses", "/studentdashboard#courses")}
+            {navItem("Mentors", "/studentdashboard#mentors")}
+            {navItem("Internships", "/studentdashboard#internships")}
           </nav>
 
           {/* footer / quick actions */}
           <div className="mt-auto px-4 py-4 border-t">
             <button
               onClick={() => {
-                typeof onNavigate === "function" && onNavigate("help");
+                navigateFn("/studentdashboard#help");
                 onClose && onClose();
               }}
               className="w-full text-left py-2 px-3 rounded-md hover:bg-gray-50"
@@ -123,7 +170,8 @@ export default function Sidebar({
             </button>
             <button
               onClick={() => {
-                typeof onNavigate === "function" && onNavigate("signout");
+                // sign out -> go to login page by default; if you want full signout flow, pass onNavigate prop
+                navigateFn("/studentlogin");
                 onClose && onClose();
               }}
               className="mt-2 w-full text-left py-2 px-3 rounded-md text-red-600 hover:bg-red-50"
