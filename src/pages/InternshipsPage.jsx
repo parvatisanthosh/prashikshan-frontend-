@@ -528,11 +528,7 @@ export default function InternshipsPage() {
                  </div>
               </div>
 
-              <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-5 text-white shadow-lg">
-                 <h3 className="font-bold text-base mb-1">Go Premium</h3>
-                 <p className="text-blue-100 text-xs mb-3">Get 3x more visibility to recruiters.</p>
-                 <button className="px-4 py-2 bg-white text-blue-700 font-bold rounded-lg text-xs w-full shadow-sm hover:bg-gray-50">Upgrade Now</button>
-              </div>
+
 
             </div>
           </aside>

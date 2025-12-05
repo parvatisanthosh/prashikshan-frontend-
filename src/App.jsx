@@ -8,6 +8,7 @@ import StudentDashboard from "./pages/StudentDashboard.jsx";
 import LogbookPage from "./pages/LogBook.jsx";
 import ActivityTrackerPage from "./pages/StudentActivityTracker.jsx";
 import Internships from "../src/pages/InternshipsPage.jsx";
+import Courses from "../src/pages/CoursesPage.jsx";
 
 
 
@@ -32,7 +33,8 @@ export default function App() {
         <Route path="/facultylogin" element={<FacultyLoginPage />} /> 
         <Route path="/facultysignup" element={<FacultySignupPage />} />
         <Route path="/faculty/dashboard" element={<FacultyDashboard />} /> 
-        <Route path="internships" element={<Internships />} />
+        <Route path="/internships" element={<Internships />} />
+        <Route path="/courses" element={<Courses />} />
       </Routes>
     </div>
   );
