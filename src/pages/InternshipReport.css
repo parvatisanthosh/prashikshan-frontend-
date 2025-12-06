@@ -1,0 +1,296 @@
+/* ===== Page container ===== */
+.ir-page {
+    max-width: 1160px;
+    margin: 1.8rem auto 2.5rem;
+    padding: 0 1.5rem 2rem;
+    background-color: #ffffff;
+    /* pure white as you asked */
+}
+
+/* ===== Header ===== */
+.ir-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.ir-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.15rem;
+}
+
+.ir-subtitle {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* Common muted text */
+.ir-muted {
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+
+/* ===== Metric tiles (keep as before) ===== */
+.ir-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.ir-metric-card {
+    padding: 0.9rem 1rem;
+    border-radius: 16px;
+    background-color: #ffffff;
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    transition: transform 0.16s ease, box-shadow 0.16s ease,
+        border-color 0.16s ease;
+}
+
+.ir-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 42px rgba(15, 23, 42, 0.2);
+    border-color: rgba(24, 119, 242, 0.45);
+}
+
+.ir-metric-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+}
+
+.ir-metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+/* ===== Generic cards ===== */
+.ir-section {
+    margin-top: 1.5rem;
+}
+
+.ir-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ir-section-header h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.ir-card {
+    margin-top: 0.7rem;
+    border-radius: 18px;
+    background-color: #ffffff;
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    padding: 1rem 1.2rem;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    transition: transform 0.16s ease, box-shadow 0.16s ease,
+        border-color 0.16s ease;
+}
+
+.ir-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
+    border-color: rgba(24, 119, 242, 0.25);
+}
+
+/* ===== Profile grid ===== */
+.ir-profile-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.4rem;
+    font-size: 0.9rem;
+}
+
+.ir-profile-grid h4 {
+    margin: 0 0 0.35rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.ir-profile-grid p {
+    margin: 0.15rem 0;
+    display: flex;
+    gap: 0.4rem;
+}
+
+/* label: value alignment */
+.ir-label {
+    display: inline-block;
+    min-width: 110px;
+    font-weight: 600;
+    color: #4b5563;
+}
+
+/* ===== Logs table ===== */
+.ir-logs-card {
+    max-height: 260px;
+    overflow: auto;
+}
+
+.ir-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.ir-table th,
+.ir-table td {
+    padding: 0.45rem 0.6rem;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+}
+
+.ir-table th {
+    background-color: #f3f4f6;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+/* ===== Projects list ===== */
+.ir-project-item {
+    padding: 0.6rem 0.4rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.ir-project-item:last-child {
+    border-bottom: none;
+}
+
+.ir-project-title {
+    font-weight: 600;
+}
+
+.ir-project-tools {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.ir-project-objective {
+    font-size: 0.86rem;
+    margin-top: 0.2rem;
+    display: flex;
+    gap: 0.4rem;
+}
+
+/* ===== Special buttons row (Preview / Print / Download) ===== */
+.ir-actions-card {
+    margin-bottom: 0.9rem;
+}
+
+.ir-actions-title {
+    font-weight: 600;
+    font-size: 0.96rem;
+}
+
+.ir-actions-subtitle {
+    margin-top: 0.15rem;
+}
+
+.ir-actions-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+/* Preview Report: blue pill */
+.ir-actions-buttons .btn:nth-child(1) {
+    background-color: #1877f2;
+    color: #ffffff;
+    border-radius: 999px;
+    padding-inline: 1.3rem;
+}
+
+/* Print / Save as PDF: grey rectangle with black text */
+.ir-actions-buttons .btn-secondary {
+    background-color: #e5e7eb;
+    color: #111827;
+    border-radius: 6px;
+    padding-inline: 1.2rem;
+    box-shadow: none;
+}
+
+/* Download as HTML: purple pill with white text */
+.ir-download-btn {
+    background: linear-gradient(135deg, #7c3aed, #4c1d95);
+    /* purple background */
+    color: #ffffff;
+    /* <-- white text */
+    border-radius: 999px;
+    padding-inline: 1.3rem;
+    border: none;
+}
+
+/* ===== "Open in Main Portal" links styled as pills ===== */
+.ir-link-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid rgba(24, 119, 242, 0.6);
+    color: #1877f2;
+    background-color: #f3f8ff;
+    cursor: pointer;
+    transition: background 0.16s ease, box-shadow 0.16s ease,
+        transform 0.16s ease, border-color 0.16s ease;
+}
+
+.ir-link-button:hover {
+    background-color: #e1efff;
+    box-shadow: 0 8px 20px rgba(24, 119, 242, 0.25);
+    transform: translateY(-1px);
+    border-color: #1456b6;
+}
+
+/* ===== iframe ===== */
+.ir-preview-wrapper {
+    margin-top: 0.8rem;
+}
+
+.ir-report-frame,
+.report-preview-frame {
+    width: 100%;
+    height: 70vh;
+    border-radius: 18px;
+    border: 1px solid #dde3f0;
+    background-color: #ffffff;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
+}
+
+/* ===== Image form ===== */
+.ir-form .form-field {
+    margin-bottom: 0.8rem;
+}
+
+.ir-save-btn {
+    margin-top: 0.3rem;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+    .ir-metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ir-profile-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ir-actions-buttons {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
