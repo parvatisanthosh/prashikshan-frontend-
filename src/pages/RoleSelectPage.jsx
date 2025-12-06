@@ -13,14 +13,6 @@ const FacultyIcon = (props) => (
     <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"></path>
   </svg>
 );
-const MentorIcon = (props) => (
-  <svg {...props} className="w-7 h-7 mr-4 text-purple-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}>
-    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path>
-    <circle cx="9" cy="7" r="4"></circle>
-    <path d="M23 21v-2a4 4 0 00-3-3.87"></path>
-    <path d="M16 3.13a4 4 0 010 7.75"></path>
-  </svg>
-);
 const CompanyIcon = (props) => (
   <svg {...props} className="w-7 h-7 mr-4 text-emerald-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}>
     <path d="M16 20V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v16m2 0v2m0-2h4m-4 0h-4m4-4h4m-4 0V4"></path>
@@ -36,7 +28,6 @@ const AdminIcon = (props) => (
 const roles = [
   { name: "Student", label: "Continue as Student", path: "/studentlogin", color: "indigo", Icon: StudentIcon },
   { name: "Faculty", label: "Continue as Faculty", path: "/facultylogin", color: "sky", Icon: FacultyIcon },
-  { name: "Mentor", label: "Continue as Mentor", path: "/mentorlogin", color: "purple", Icon: MentorIcon },
   { name: "Company", label: "Continue as Company", path: "/companylogin", color: "emerald", Icon: CompanyIcon },
   { name: "Admin", label: "Continue as Admin", path: "/adminlogin", color: "gray", Icon: AdminIcon },
 ];
