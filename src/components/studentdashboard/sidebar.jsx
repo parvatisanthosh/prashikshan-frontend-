@@ -31,7 +31,7 @@ export default function Sidebar({
 
       case "profile":
         // Just go to the main dashboard wrapper
-        navigate(""); 
+        navigate("/studentprofile"); 
         break;
 
       case "logbook":
@@ -94,7 +94,7 @@ export default function Sidebar({
       case "home":
         return path === "/";
       case "profile":
-        return path === "/studentdashboard" && !view; // Default dashboard view
+        return path === "/studentprofile" && !view; // Default dashboard view
       case "logbook":
         return path.startsWith("/logbook");
       case "activity":

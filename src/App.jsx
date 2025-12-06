@@ -14,6 +14,7 @@ import Certificates from "../src/pages/Certificates.jsx";
 import MentorLoginPage from "./pages/MentorLoginPage.jsx";
 import MentorSignupPage from "./pages/MentorSignupPage.jsx";
 import MentorDashboard from "./pages/MentorDashboard.jsx";
+import ProfilePage from "./pages/StudentProfile.jsx";
 
 
 
@@ -47,7 +48,7 @@ export default function App() {
         <Route path="/mentorlogin" element={<MentorLoginPage />} />
         <Route path="/mentorsignup" element={<MentorSignupPage />} />
         <Route path="/mentordashboard" element={<MentorDashboard />} />
-
+        <Route path="/studentprofile" element={<ProfilePage />} />
       </Routes>
     </div>
   );
