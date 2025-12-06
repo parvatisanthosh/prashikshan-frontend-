@@ -1,271 +1,138 @@
-import React, { useState, useMemo } from "react";
-import {
-  PlusIcon,
-  PencilSquareIcon,
-  TrashIcon,
-  AcademicCapIcon,
-  MagnifyingGlassIcon,
-  ArrowLeftIcon,
-} from "@heroicons/react/24/solid";
-import CreateClass from "./CreateClass.jsx";
+import React from "react";
+// Assuming you might use some icons, let's pretend to import them for structure
+// For example: import { Search, Plus, Users, Edit, Trash, Link2 } from 'lucide-react';
 
-/**
- * ManageClasses.jsx
- *
- * Props:
- *  - classList: Array of class objects { id, name, section, students, logsPending, status }
- *  - setClassList: setter function from parent state
- *
- * Behavior:
- *  - Shows the list of classes (searchable)
- *  - Clicking "Create New Class" opens the CreateClass form (inline)
- *  - CreateClass must call onClassCreated(newClass) to add the created class
- */
+export default function ManageClasses({ 
+  classList, 
+  onCreate, 
+  onEdit, 
+  onView, 
+  onDelete,
+  onGenerateLink // New prop for generating or copying the link
+}) {
 
-export default function ManageClasses({ classList = [], setClassList }) {
-  const [isCreating, setIsCreating] = useState(false);
-  const [query, setQuery] = useState("");
-  const [sortBy, setSortBy] = useState("name"); // 'name' or 'students' or 'status'
-  const [selectedIdToDelete, setSelectedIdToDelete] = useState(null);
-  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [searchTerm, setSearchTerm] = React.useState("");
 
-  // Filtered + sorted results (memoized)
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    let items = classList.slice();
+  const filteredClassList = classList.filter(cls =>
+    cls.className.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cls.classCode.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-    if (q) {
-      items = items.filter(
-        (c) =>
-          (c.name || "").toLowerCase().includes(q) ||
-          (c.section || "").toLowerCase().includes(q) ||
-          (c.id || "").toLowerCase().includes(q)
-      );
-    }
-
-    if (sortBy === "name") {
-      items.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-    } else if (sortBy === "students") {
-      items.sort((a, b) => (b.students || 0) - (a.students || 0));
-    } else if (sortBy === "status") {
-      items.sort((a, b) => (a.status || "").localeCompare(b.status || ""));
-    }
-
-    return items;
-  }, [classList, query, sortBy]);
-
-  // Handler: when CreateClass finishes and returns newClass
-  const handleClassCreated = (newClass) => {
-    if (!newClass || !newClass.id) {
-      console.warn("ManageClasses: onClassCreated called without valid newClass", newClass);
-      setIsCreating(false);
-      return;
-    }
-
-    // Prevent duplicate id
-    setClassList((prev) => {
-      const exists = prev.some((c) => c.id === newClass.id);
-      if (exists) return prev.concat(); // no change
-      return [...prev, newClass];
+  const handleCopyLink = (classId) => {
+    // This is where you would call your actual link generation/copy logic
+    const link = onGenerateLink(classId); // Assume this function returns the link string
+    navigator.clipboard.writeText(link).then(() => {
+      // Add a simple alert or toast notification for user feedback
+      alert(`Class link copied: ${link}`);
     });
-
-    // Return to list view
-    setIsCreating(false);
   };
 
-  // Delete flow (shows simple confirm)
-  const handleRequestDelete = (id) => {
-    setSelectedIdToDelete(id);
-    setShowConfirmDelete(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (selectedIdToDelete) {
-      setClassList((prev) => prev.filter((c) => c.id !== selectedIdToDelete));
-    }
-    setSelectedIdToDelete(null);
-    setShowConfirmDelete(false);
-  };
-
-  const handleCancelDelete = () => {
-    setSelectedIdToDelete(null);
-    setShowConfirmDelete(false);
-  };
-
-  // Placeholder edit and view actions - integrate with modals/routes as needed
-  const handleEdit = (id) => {
-    console.log("Edit class", id);
-    // TODO: open edit modal or route to edit page
-  };
-
-  const handleView = (id) => {
-    console.log("View class roster/details", id);
-    // TODO: route to Class Details / Roster page
-  };
-
-  // Render create form
-  if (isCreating) {
-    return (
-      <div className="p-6 md:p-10 max-w-7xl mx-auto">
-        <div className="flex items-center gap-4 mb-6">
-          <button
-            onClick={() => setIsCreating(false)}
-            className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-semibold"
-          >
-            <ArrowLeftIcon className="h-4 w-4" />
-            Back to Class List
-          </button>
-
-          <h2 className="text-2xl font-bold text-slate-800">Create Class</h2>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-6">
-          {/* CreateClass accepts onClassCreated(newClass) */}
-          <CreateClass onClassCreated={handleClassCreated} />
-        </div>
-      </div>
-    );
-  }
-
-  // List view
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold text-slate-800">Manage Classes</h1>
-          <p className="text-slate-500 mt-1">View, search, edit, or create classes.</p>
-        </div>
+    <div className="p-6 md:p-10 max-w-7xl mx-auto">
+      
+      {/* 🚀 Header and Primary Action */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+        <h1 className="text-4xl font-extrabold text-slate-800 mb-4 md:mb-0">
+          Class Dashboard
+        </h1>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          {/* Search */}
-          <div className="relative">
-            <MagnifyingGlassIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name, id or section..."
-              className="pl-9 pr-3 py-2 rounded-full border border-slate-200 w-56 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-            />
-          </div>
-
-          {/* Sort */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-2 border rounded-lg bg-white text-sm"
-          >
-            <option value="name">Sort: Name</option>
-            <option value="students">Sort: Students (desc)</option>
-            <option value="status">Sort: Status</option>
-          </select>
-
-          {/* Create button */}
-          <button
-            onClick={() => setIsCreating(true)}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow-md"
-          >
-            <PlusIcon className="h-4 w-4" />
-            Create New
-          </button>
-        </div>
+        <button
+          onClick={onCreate}
+          className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:bg-indigo-700 transition duration-200"
+        >
+          {/* <Plus className="w-5 h-5" /> */}
+          <span>Create New Class</span>
+        </button>
       </div>
 
-      {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.length === 0 ? (
-          <div className="col-span-full text-center py-12 bg-white rounded-xl shadow border text-slate-500">
-            No classes match your search. Click <strong>Create New</strong> to add one.
-          </div>
-        ) : (
-          filtered.map((cls) => (
-            <div key={cls.id} className="bg-white rounded-2xl shadow-xl border p-6 flex flex-col">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-indigo-50 rounded-full text-indigo-600 shadow-sm">
-                  <AcademicCapIcon className="h-6 w-6" />
-                </div>
+      <hr className="mb-8 border-gray-200" />
+      
+      {/* 🔍 Search and Filter */}
+      <div className="mb-8">
+        <input
+          type="text"
+          placeholder="Search by class name or code..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full md:w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition duration-150"
+        />
+      </div>
 
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-slate-900">{cls.name}</h3>
-                  <p className="text-sm text-slate-500">Section {cls.section}</p>
-                  <p className="text-xs text-slate-400 mt-2">{cls.id}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between mt-4 border-y py-3">
-                <div className="text-sm">
-                  <div className="font-semibold">Students: {cls.students ?? 0}</div>
-                  <div className="text-xs text-slate-500">Logs Pending: {cls.logsPending ?? 0}</div>
-                </div>
-
-                <div>
-                  <span
-                    className={`text-xs font-bold px-3 py-1 rounded-full ${
-                      cls.status === "Active" ? "bg-green-100 text-green-700" : "bg-slate-200 text-slate-700"
-                    }`}
-                  >
-                    {cls.status}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between mt-4">
-                <button
-                  onClick={() => handleView(cls.id)}
-                  className="text-indigo-600 font-semibold"
-                >
-                  View Roster
-                </button>
-
-                <div className="flex gap-3 items-center">
-                  <button
-                    onClick={() => handleEdit(cls.id)}
-                    className="p-2 rounded-lg hover:bg-indigo-50 text-slate-600"
-                    title="Edit Class"
-                  >
-                    <PencilSquareIcon className="h-5 w-5" />
-                  </button>
-
-                  <button
-                    onClick={() => handleRequestDelete(cls.id)}
-                    className="p-2 rounded-lg hover:bg-red-50 text-slate-600"
-                    title="Delete Class"
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))
+      {/* 📚 Class List Display */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {filteredClassList.length === 0 && (
+          <p className="text-slate-500 col-span-full py-10 text-center text-lg">
+            {searchTerm 
+              ? `No classes found matching "${searchTerm}".` 
+              : "No classes yet. Use the button above to create one!"}
+          </p>
         )}
-      </div>
 
-      {/* Confirm delete modal (simple inline dialog) */}
-      {showConfirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={handleCancelDelete} />
-          <div className="relative bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold">Delete class?</h3>
-            <p className="text-slate-600 mt-2">This will permanently remove the class. Are you sure?</p>
+        {filteredClassList.map((cls, index) => (
+          // Card for each Class
+          <div 
+            key={cls.id || index} // Use unique ID if available, otherwise index
+            className="flex flex-col p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
+          >
+            {/* Class Info */}
+            <h2 className="text-xl font-bold text-slate-900 truncate mb-1" title={cls.className}>
+              {cls.className}
+            </h2>
+            <p className="text-sm font-medium text-indigo-600 mb-4">
+              Code: <span className="font-semibold">{cls.classCode}</span>
+            </p>
 
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={handleCancelDelete}
-                className="px-4 py-2 rounded-lg border"
+            {/* Quick Stats */}
+            <div className="flex items-center text-sm text-slate-600 mb-4 space-x-2">
+                {/* <Users className="w-4 h-4 text-indigo-500" /> */}
+                <span>{cls.studentCount || 0} Students</span>
+            </div>
+            
+            {/* 🔗 Generate/Copy Link Button (New Feature) */}
+            <button 
+                onClick={() => handleCopyLink(cls.id)} 
+                className="flex items-center justify-center space-x-2 w-full py-2 mb-4 text-sm font-semibold text-indigo-700 bg-indigo-100 rounded-lg hover:bg-indigo-200 transition duration-200"
+            >
+                {/* <Link2 className="w-4 h-4" /> */}
+                <span>Copy Class Link</span>
+            </button>
+
+
+            {/* 🎯 Action Buttons (Updated/Grouped) */}
+            <div className="mt-auto pt-4 border-t border-gray-100 flex flex-col space-y-3">
+              
+              {/* View Student Work */}
+              <button 
+                onClick={() => onView && onView(cls)} 
+                className="w-full py-2 text-sm text-white bg-green-500 rounded-lg hover:bg-green-600 transition duration-200"
               >
-                Cancel
+                View Student Work
               </button>
-
-              <button
-                onClick={handleConfirmDelete}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white"
-              >
-                Delete
-              </button>
+              
+              <div className="flex space-x-2">
+                {/* Edit Class */}
+                <button 
+                  onClick={() => onEdit && onEdit(cls)}
+                  className="w-1/2 py-2 text-sm text-slate-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition duration-200 flex items-center justify-center space-x-1"
+                >
+                  {/* <Edit className="w-4 h-4" /> */}
+                  <span>Edit</span>
+                </button>
+                
+                {/* Delete Class */}
+                <button 
+                  onClick={() => onDelete && onDelete(cls)}
+                  className="w-1/2 py-2 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition duration-200 flex items-center justify-center space-x-1"
+                >
+                  {/* <Trash className="w-4 h-4" /> */}
+                  <span>Delete</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
+      
     </div>
   );
 }

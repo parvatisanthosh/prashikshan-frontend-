@@ -1,102 +1,98 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/solid";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Helper component for menu items
   const NavLink = ({ to, children }) => (
-    <Link 
-      to={to} 
-      className="block text-base font-medium text-slate-600 py-2 md:py-1 px-3 rounded-full hover:bg-indigo-50 hover:text-indigo-700 transition duration-200"
+    <Link
+      to={to}
+      className="relative px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition group"
     >
       {children}
+      {/* underline animation */}
+      <span className="absolute left-0 bottom-0 w-0 h-[2px] bg-indigo-600 transition-all duration-300 group-hover:w-full"></span>
     </Link>
   );
 
   return (
-    // Outer container: Fixed, sleek background with blur and distinct shadow
-    <nav className="w-full fixed top-0 left-0 z-50 bg-white/80 backdrop-filter backdrop-blur-md shadow-lg shadow-indigo-100/50 border-b border-slate-100">
+    <nav className="w-full fixed top-0 left-0 z-50 backdrop-blur-xl bg-white/80 shadow-[0_2px_20px_rgba(0,0,0,0.05)] border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        <div className="flex justify-between items-center py-3 md:py-4">
-          
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <h1 className="text-3xl font-extrabold tracking-tighter text-indigo-700">
-                Prashikshan
+        <div className="flex justify-between items-center h-16 md:h-20">
+
+          {/* --- LOGO --- */}
+          <Link to="/" className="flex items-center gap-3">
+            <div className="w-11 h-11 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-md">
+              <span className="text-white font-bold text-lg">P</span>
+            </div>
+            <h1 className="hidden sm:block text-2xl font-extrabold text-gray-900">
+              Prashikshan
             </h1>
           </Link>
 
-          {/* Primary Menu (Desktop) */}
-          <div className="hidden md:flex md:space-x-4 lg:space-x-6 items-center">
+          {/* --- CENTER MENU (DESKTOP) --- */}
+          <div className="hidden lg:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
             <NavLink to="/students">Students</NavLink>
             <NavLink to="/colleges">Colleges</NavLink>
             <NavLink to="/industry">Industry Partners</NavLink>
             <NavLink to="/resources">Resources</NavLink>
           </div>
 
-          {/* Right Section: Actions */}
+          {/* --- RIGHT SECTION BUTTONS (DESKTOP) --- */}
           <div className="hidden md:flex gap-3 items-center">
-            
-            {/* Login Button: Link updated to /roleselect */}
-            <Link to="/roleselect"> 
-              <button 
-                className="px-5 py-2.5 text-sm font-semibold text-indigo-600 border border-indigo-200 rounded-full hover:border-indigo-400 hover:bg-indigo-50 transition duration-200 active:scale-[0.98]"
-              >
+            <Link to="/roleselect">
+              <button className="px-6 py-2 text-sm font-semibold text-indigo-600 border border-indigo-300 rounded-lg bg-white hover:bg-indigo-50 active:scale-95 transition">
                 Sign In
               </button>
             </Link>
-            
-            {/* Register Button (Primary CTA): Link updated to /roleselect */}
-            <Link to="/roleselect"> 
-              <button 
-                className="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 rounded-full shadow-lg shadow-indigo-500/40 hover:bg-indigo-700 transition duration-200 active:scale-[0.98]"
-              >
+
+            <Link to="/roleselect">
+              <button className="px-6 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg shadow hover:bg-indigo-700 active:scale-95 transition">
                 Register
               </button>
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          {/* --- MOBILE MENU TOGGLE --- */}
+          <div className="md:hidden flex items-center gap-2">
+            <Link to="/roleselect">
+              <button className="px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition">
+                Sign Up
+              </button>
+            </Link>
+
             <button
-              type="button"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-slate-500 hover:text-indigo-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
-              aria-expanded="false"
+              className="p-2 rounded-md text-gray-700 hover:bg-gray-100 transition"
             >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                {isMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
+              {isMenuOpen ? <XMarkIcon className="h-6 w-6" /> : <Bars3Icon className="h-6 w-6" />}
             </button>
           </div>
+
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
+      {/* --- MOBILE MENU --- */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white/95 backdrop-filter backdrop-blur-sm border-t border-slate-100 py-3">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+        <div className="md:hidden bg-white border-t border-gray-200 shadow-lg animate-fadeIn">
+          <div className="px-4 pt-3 pb-3 space-y-1">
             <NavLink to="/students">Students</NavLink>
             <NavLink to="/colleges">Colleges</NavLink>
             <NavLink to="/industry">Industry Partners</NavLink>
             <NavLink to="/resources">Resources</NavLink>
           </div>
-          <div className="pt-4 pb-3 border-t border-slate-100 space-y-2 px-4">
-            {/* Login Button: Link updated to /roleselect */}
+
+          <div className="px-4 pt-3 pb-4 border-t border-gray-200 space-y-3">
             <Link to="/roleselect">
-              <button className="w-full text-center py-2 text-sm font-semibold text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-50">
+              <button className="w-full py-2 text-sm font-semibold text-indigo-600 border border-indigo-300 rounded-lg hover:bg-indigo-50 transition">
                 Sign In
               </button>
             </Link>
-            {/* Register Button: Link updated to /roleselect */}
+
             <Link to="/roleselect">
-              <button className="w-full text-center py-2 text-sm font-bold text-white bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700">
+              <button className="w-full py-2 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow transition">
                 Register
               </button>
             </Link>
