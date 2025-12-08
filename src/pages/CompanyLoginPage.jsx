@@ -5,6 +5,7 @@ import {
     EnvelopeIcon,
     LockClosedIcon
 } from '@heroicons/react/24/solid';
+import authService from '../services/authService';
 
 // --- Authorization URL Construction (Placeholder/Unchanged) ---
 // Note: In a real app, these links would initiate the SSO flow.
@@ -22,43 +23,55 @@ export default function CompanyLoginPage() {
     });
     
     // --- UI State ---
-    const [showPassword, setShowPassword] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+ const [showPassword, setShowPassword] = useState(false);
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState(null);
 
-    // --- Handlers ---
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-        if (error) setError(null);
-    };
+// --- Handlers ---
+const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (error) setError(null);
+};
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        setError(null);
-        setLoading(true);
+const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
 
-        // Basic validation
-        if (!formData.officialEmail || !formData.password) {
-            setError('Please enter both email and password.');
-            setLoading(false);
-            return;
-        }
-        
-        // --- Login Logic Placeholder ---
-        console.log('Attempting Company Login with:', formData);
-        
-        // Simulation: Wait and either succeed or fail
-        setTimeout(() => {
-            if (formData.password === "correctpassword") { // Mock success condition
-                console.log('Login successful');
-                // navigate('/company/dashboard'); // Redirect to dashboard
-            } else {
-                setError("Invalid email or password. Please try again.");
-            }
-            setLoading(false);
-        }, 1500); 
-    };
+    // Basic validation
+    if (!formData.officialEmail || !formData.password) {
+        setError("Please enter both email and password.");
+        setLoading(false);
+        return;
+    }
+
+    try {
+        console.log("Attempting Company Login with:", formData);
+
+        // backend call
+        const response = await authService.companyLogin(
+            formData.officialEmail,
+            formData.password
+        );
+
+        // Successful login
+        navigate("/company/overview");
+
+    } catch (err) {
+        console.error("Login Failed:", err);
+
+        setError(
+            err?.response?.data?.error ||
+            err?.message ||
+            "Login failed. Please try again."
+        );
+
+    } finally {
+        setLoading(false);
+    }
+};
+
     
     // --- Render Helpers ---
     const InputLabel = ({ children }) => (

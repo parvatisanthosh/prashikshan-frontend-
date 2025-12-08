@@ -6,6 +6,7 @@ import {
     EnvelopeIcon,
     LockClosedIcon
 } from '@heroicons/react/24/solid';
+import authService from '../services/authService';
 
 export default function AdminLoginPage() {
     const navigate = useNavigate();
@@ -28,7 +29,7 @@ export default function AdminLoginPage() {
         if (error) setError(null);
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
         setLoading(true);
@@ -43,14 +44,12 @@ export default function AdminLoginPage() {
         // --- Login Logic Placeholder ---
         console.log('Attempting Admin Login with:', formData);
         
+        const res = await authService.adminLogin(formData.systemEmail, formData.password);
         // Simulation: Wait and either succeed or fail
         setTimeout(() => {
-            if (formData.systemEmail === "admin@prashikshan.com" && formData.password === "Secure123!") { // Mock success condition
-                console.log('Admin Login successful');
-                // navigate('/admin/dashboard'); // Redirect to Admin dashboard
-            } else {
-                setError("Invalid system email or password. Access Denied.");
-            }
+           
+                navigate('/admin/dashboard'); // Redirect to Admin dashboard
+            
             setLoading(false);
         }, 1500); 
     };
