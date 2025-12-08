@@ -1,5 +1,6 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
+import Chat from "./pages/chat.jsx";
 
 // Adding .jsx extensions back to fix file resolution errors
 // Landing + Role Select
@@ -21,7 +22,7 @@ import MentorSignupPage from "./pages/MentorSignupPage.jsx";
 import MentorDashboard from "./pages/MentorDashboard.jsx";
 import ProfilePage from "./pages/StudentProfile.jsx";
 
-import RoleSelectPage from "./pages/RoleSelectPage.jsx";
+
 import FacultyLoginPage from "./pages/FacultyLoginPage.jsx";
 import FacultySignupPage from "./pages/FacultySignupPage.jsx";
 import FacultyDashboard from "./pages/FacultyDashboard.jsx";
@@ -81,6 +82,7 @@ export default function App() {
 
         {/* NEW: Internship Report Generator */}
         <Route path="/internship-report" element={<InternshipReport />} />
+        <Route path="/chat" element={<Chat />} />
       </Routes>
     </div>
   );

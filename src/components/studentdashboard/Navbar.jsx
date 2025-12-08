@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 /**
  * Navbar component (Facebook-inspired Style)
@@ -8,6 +9,7 @@ import React, { useState } from "react";
  * - "Pill-shaped" gray search bar (#F0F2F5)
  * - Circular hover backgrounds for icons
  * - Sticky positioning with subtle shadow
+ * - Added Chat button with direct navigation
  */
 
 export default function Navbar({
@@ -18,6 +20,7 @@ export default function Navbar({
 }) {
   const [query, setQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const navigate = useNavigate();
 
   function submitSearch(e) {
     if (e) e.preventDefault();
@@ -25,6 +28,16 @@ export default function Navbar({
     else {
       // fallback: update hash for quick local testing
       window.location.hash = `#/search?q=${encodeURIComponent(query.trim())}`;
+    }
+  }
+
+  // Handle chat button click with direct navigation
+  function handleChatClick() {
+    try {
+      navigate('/chat');
+    } catch (error) {
+      // Fallback to hash navigation if React Router fails
+      window.location.hash = "#/chat";
     }
   }
 
@@ -50,10 +63,8 @@ export default function Navbar({
           {/* Logo */}
           <div 
             className="cursor-pointer flex items-center gap-2"
-            onClick={() => window.location.hash = "#/"}
+            onClick={() => navigate('/')}
           >
-            {/* Optional: Add a logo icon here if you have one */}
-            {/* <div className="w-10 h-10 bg-[#0866FF] rounded-full text-white flex items-center justify-center font-bold text-2xl">P</div> */}
             <span className="text-[28px] font-black text-[#0866FF] tracking-tighter leading-none select-none">
               Prashikshan
             </span>
@@ -106,9 +117,21 @@ export default function Navbar({
             </svg>
           </button>
 
+          {/* Chat Button - Direct Navigation */}
+          <button
+            onClick={handleChatClick}
+            className="relative w-10 h-10 flex items-center justify-center rounded-full bg-[#F0F2F5] text-black hover:bg-[#E4E6E9] transition-colors"
+            aria-label="Chat"
+            title="Chat Rooms"
+          >
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.477 2 2 6.477 2 12c0 1.592.394 3.096 1.091 4.416L2.035 20.44a1 1 0 001.284 1.149l4.338-1.428A9.956 9.956 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm-1 13a1 1 0 110-2 1 1 0 010 2zm4 0a1 1 0 110-2 1 1 0 010 2zm-8 0a1 1 0 110-2 1 1 0 010 2z" />
+            </svg>
+          </button>
+
           {/* Notifications */}
           <button
-            onClick={() => (typeof onNavigate === "function" ? onNavigate("notifications") : window.location.hash = "#/notifications")}
+            onClick={() => (typeof onNavigate === "function" ? onNavigate("notifications") : navigate('/notifications'))}
             className="relative w-10 h-10 flex items-center justify-center rounded-full bg-[#F0F2F5] text-black hover:bg-[#E4E6E9] transition-colors"
             aria-label="Notifications"
           >
@@ -133,7 +156,7 @@ export default function Navbar({
 
           {/* Profile Dropdown Trigger */}
           <button
-            onClick={() => (typeof onNavigate === "function" ? onNavigate("profile") : window.location.hash = "#/profile")}
+            onClick={() => (typeof onNavigate === "function" ? onNavigate("profile") : navigate('/studentprofile'))}
             className="ml-1 relative rounded-full overflow-hidden w-10 h-10 border border-gray-200 hover:opacity-90 transition-opacity"
             title="Profile"
           >
@@ -143,7 +166,6 @@ export default function Navbar({
               className="w-full h-full object-cover"
             />
           </button>
-
         </div>
       </div>
     </header>

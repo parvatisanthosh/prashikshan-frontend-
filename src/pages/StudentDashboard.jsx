@@ -21,7 +21,7 @@ export default function StudentDashboard() {
         onToggleSidebar={() => setSidebarOpen(true)}
         onSearch={(q) => alert("Search: " + q)}
         onNavigate={(r) => handleNavigate(r)}
-      />
+      />z
 
       {/* IMPORTANT: add top padding so fixed navbar doesn't cover content */}
       <div className="">

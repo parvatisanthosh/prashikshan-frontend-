@@ -38,6 +38,7 @@ export default function Navbar() {
             <NavLink to="/colleges">Colleges</NavLink>
             <NavLink to="/industry">Industry Partners</NavLink>
             <NavLink to="/resources">Resources</NavLink>
+            <NavLink to="/chat">Chat</NavLink>
           </div>
 
           {/* --- RIGHT SECTION BUTTONS (DESKTOP) --- */}
@@ -82,6 +83,7 @@ export default function Navbar() {
             <NavLink to="/colleges">Colleges</NavLink>
             <NavLink to="/industry">Industry Partners</NavLink>
             <NavLink to="/resources">Resources</NavLink>
+            <NavLink to="/chat">Chat</NavLink> 
           </div>
 
           <div className="px-4 pt-3 pb-4 border-t border-gray-200 space-y-3">
