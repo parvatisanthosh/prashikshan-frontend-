@@ -13,6 +13,7 @@ import {
   ShieldExclamationIcon,
 } from "@heroicons/react/24/solid";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
+import adminService from "../../../services/adminService";
 
 // --- MODAL COMPONENT (Outside to prevent typing bugs) ---
 const ConfirmationModal = ({ 
@@ -187,24 +188,17 @@ export default function ForceAddUI() {
   const fetchInitialData = async () => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      const mockStudents = [
-        { id: "STU001", name: "Rahul Sharma", rollNo: "2021CS101", department: "Computer Science", cgpa: 5.8, backlogs: 2, email: "rahul.sharma@college.edu", phone: "+91 98765 43210", reason: "CGPA below 6.0", status: "ineligible" },
-        { id: "STU002", name: "Priya Patel", rollNo: "2021IT205", department: "Information Technology", cgpa: 6.2, backlogs: 3, email: "priya.patel@college.edu", phone: "+91 98765 43211", reason: "Active backlogs > 2", status: "ineligible" },
-        { id: "STU003", name: "Amit Kumar", rollNo: "2021EC301", department: "Electronics", cgpa: 5.5, backlogs: 1, email: "amit.kumar@college.edu", phone: "+91 98765 43212", reason: "CGPA below threshold", status: "ineligible" },
-        { id: "STU004", name: "Sneha Gupta", rollNo: "2021ME401", department: "Mechanical", cgpa: 7.8, backlogs: 0, email: "sneha.gupta@college.edu", phone: "+91 98765 43213", reason: "Registration deadline passed", status: "missed_deadline" },
-      ];
-      const mockDrives = [
-        { id: "DRV001", company: "Tech Corp India", position: "Software Engineer", date: "2025-12-15", package: "8 LPA", eligibilityCriteria: "CGPA ≥ 6.0, No backlogs", status: "active" },
-        { id: "DRV002", company: "Innovation Labs", position: "Data Analyst", date: "2025-12-20", package: "6 LPA", eligibilityCriteria: "CGPA ≥ 5.5, Max 2 backlogs", status: "active" },
-        { id: "DRV003", company: "Global Solutions", position: "Product Manager", date: "2025-12-25", package: "12 LPA", eligibilityCriteria: "CGPA ≥ 7.0, No backlogs", status: "active" },
-      ];
-      const mockDepartments = ["Computer Science", "Information Technology", "Electronics", "Mechanical", "Civil Engineering", "Electrical"];
+      // Fetch ineligible students and placement drives from API
+      const [studentsResponse, drivesResponse, deptResponse] = await Promise.all([
+        adminService.getIneligibleStudents(),
+        adminService.getPlacementDrives({ status: 'active' }),
+        adminService.getDepartments()
+      ]);
       
-      setAllStudents(mockStudents); // Save master copy
-      setStudents(mockStudents);    // Save display copy
-      setPlacementDrives(mockDrives);
-      setDepartments(mockDepartments);
+      setAllStudents(studentsResponse.students || []); // Save master copy
+      setStudents(studentsResponse.students || []);    // Save display copy
+      setPlacementDrives(drivesResponse.drives || []);
+      setDepartments(deptResponse.departments || []);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -239,16 +233,22 @@ export default function ForceAddUI() {
     }
     setSubmitting(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await adminService.forceAddStudent({
+        studentId: selectedStudent.id,
+        driveId: selectedDrive,
+        reason: overrideReason.trim()
+      });
       setSuccessMessage(`Successfully added ${selectedStudent.name} to the placement drive!`);
       setShowConfirmModal(false);
       setSelectedStudent(null);
       setSelectedDrive("");
       setOverrideReason("");
+      // Refresh the student list
+      fetchInitialData();
       setTimeout(() => setSuccessMessage(""), 5000);
     } catch (error) {
       console.error("Error force adding student:", error);
-      alert("Failed to add student. Please try again.");
+      alert(error.message || "Failed to add student. Please try again.");
     } finally {
       setSubmitting(false);
     }

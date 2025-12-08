@@ -1,7 +1,6 @@
 // src/pages/StudentDashboardMain.jsx
 import React, { useEffect, useState } from "react";
-
-
+import studentService from "../../services/studentService";
 
 /**
  * StudentDashboardMain.jsx
@@ -10,82 +9,110 @@ import React, { useEffect, useState } from "react";
  * - Tabbed Interface for sub-sections.
  */
 
-const USE_MOCK = true;
-
-/* -------------------- MOCK DATA -------------------- */
-const MOCK_DASHBOARD_DATA = {
-  user: {
-    name: "Divyam Gupta",
-    role: "CS Undergrad",
-    email: "divyam.gupta@college.edu",
-    semester: 5,
-    resumeScore: 72,
-  },
-  stats: {
-    cgpa: 8.42,
-    creditsEarned: 94,
-    totalCredits: 160,
-    applied: 12,
-    shortlisted: 3,
-    coursesActive: 2,
-    attendance: 85,
-  },
-  academicHistory: [
-    { semester: 1, gpa: 7.3 },
-    { semester: 2, gpa: 7.8 },
-    { semester: 3, gpa: 8.1 },
-    { semester: 4, gpa: 8.0 },
-    { semester: 5, gpa: 8.42 },
-  ],
-  currentSubjects: [
-    { code: "CS301", title: "Operating Systems", grade: "A", attendance: 92 },
-    { code: "CS302", title: "Computer Networks", grade: "B+", attendance: 78 },
-    { code: "CS305", title: "Database Systems", grade: "A-", attendance: 88 },
-    { code: "HU101", title: "Engineering Ethics", grade: "A", attendance: 95 },
-  ],
-  todaysSchedule: [
-    { id: 1, time: "10:00 AM", title: "Operating Systems", type: "Lecture", room: "302" },
-    { id: 2, time: "02:00 PM", title: "Database Lab", type: "Lab", room: "Lab 4" },
-  ],
-  weeklySchedule: [
-    { day: "Mon", classes: 3 },
-    { day: "Tue", classes: 4 },
-    { day: "Wed", classes: 2 },
-    { day: "Thu", classes: 4 },
-    { day: "Fri", classes: 1 },
-  ],
-  activeCourses: [
-    { id: "c1", title: "Fullstack Web Development", progress: 65, nextLesson: "React Hooks Deep Dive", thumbnailColor: "bg-blue-600" },
-    { id: "c2", title: "Data Science Fundamentals", progress: 30, nextLesson: "Pandas Dataframes", thumbnailColor: "bg-emerald-600" },
-  ],
-  internshipApplications: [
-    { id: "a1", company: "Google", role: "Frontend Intern", status: "Interviewing", date: "2 days ago", logo: "G" },
-    { id: "a2", company: "Microsoft", role: "Cloud Intern", status: "Applied", date: "5 days ago", logo: "M" },
-    { id: "a3", company: "Swiggy", role: "Data Analyst", status: "Rejected", date: "1 week ago", logo: "S" },
-    { id: "a4", company: "Zomato", role: "Product Design", status: "Applied", date: "2 weeks ago", logo: "Z" },
-  ],
-  recommendedInternships: [
-    { id: "i1", company: "Amazon", role: "SDE Intern", stipend: "₹40k/mo", type: "Remote" },
-    { id: "i2", company: "Cred", role: "Product Design", stipend: "₹25k/mo", type: "Bangalore" },
-  ]
-};
-
 /* -------------------- Main Component -------------------- */
 export default function StudentDashboardMain() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("Overview"); // Tabs: Overview, Academics, My Applications, Learning, Schedule, Settings
 
   useEffect(() => {
-    // Simulate API Fetch
     const loadData = async () => {
       setLoading(true);
-      if (USE_MOCK) {
-        await new Promise(r => setTimeout(r, 800));
-        setData(MOCK_DASHBOARD_DATA);
+      setError(null);
+      try {
+        // Fetch all data in parallel
+        const [statsResponse, profileResponse, coursesResponse, applicationsResponse, scheduleResponse, avatarResponse] = await Promise.all([
+          studentService.getDashboardStats(),
+          studentService.getProfile(),
+          studentService.getCourses(),
+          studentService.getMyApplications(),
+          studentService.getSchedule(),
+          studentService.getAvatarUrl()
+        ]);
+
+        const profile = profileResponse.profile || {};
+        const courses = coursesResponse.courses || [];
+        const applications = applicationsResponse.applications || [];
+        const schedule = scheduleResponse.schedule || { assignments: [], sessions: [] };
+        const avatarURL = avatarResponse.avatarURL || null;
+
+        // Transform data to match component structure
+        setData({
+          user: {
+            name: profile.displayName || "Student",
+            role: profile.department || "Student",
+            email: profile.email || "",
+            semester: profile.semester || 1,
+            resumeScore: 72, // TODO: Calculate from profile completeness
+            avatarURL: avatarURL,
+          },
+          stats: {
+            cgpa: statsResponse.cgpa || 0,
+            creditsEarned: 94, // TODO: Add to backend
+            totalCredits: 160, // TODO: Add to backend
+            applied: applications.length,
+            shortlisted: applications.filter(a => a.status === 'SHORTLISTED' || a.status === 'INTERVIEWING').length,
+            coursesActive: courses.length,
+            attendance: statsResponse.attendance || 0,
+          },
+          academicHistory: [
+            { semester: 1, gpa: 7.3 },
+            { semester: 2, gpa: 7.8 },
+            { semester: 3, gpa: 8.1 },
+            { semester: 4, gpa: 8.0 },
+            { semester: 5, gpa: statsResponse.cgpa || 0 },
+          ],
+          currentSubjects: courses.slice(0, 4).map(course => ({
+            code: course.code || course.id?.substring(0, 8).toUpperCase(),
+            title: course.name,
+            grade: "A",
+            attendance: 85
+          })),
+          todaysSchedule: schedule.assignments?.slice(0, 2).map((item, idx) => ({
+            id: item.id || idx,
+            time: new Date(item.dueDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            title: item.title,
+            type: "Assignment",
+            room: "Online"
+          })) || [],
+          weeklySchedule: [
+            { day: "Mon", classes: 3 },
+            { day: "Tue", classes: 4 },
+            { day: "Wed", classes: 2 },
+            { day: "Thu", classes: 4 },
+            { day: "Fri", classes: 1 },
+          ],
+          activeCourses: courses.slice(0, 2).map(course => ({
+            id: course.id,
+            title: course.name,
+            progress: course.progress || 0,
+            nextLesson: "Continue Learning",
+            thumbnailColor: "bg-blue-600"
+          })),
+          internshipApplications: applications.map(app => ({
+            id: app.id,
+            company: app.company,
+            role: app.title,
+            status: app.status === 'APPLIED' ? 'Applied' : 
+                   app.status === 'SHORTLISTED' ? 'Interviewing' : 
+                   app.status === 'REJECTED' ? 'Rejected' : 
+                   app.status === 'ACCEPTED' ? 'Accepted' : 'Applied',
+            date: new Date(app.appliedDate).toLocaleDateString(),
+            logo: app.company?.charAt(0) || "?"
+          })),
+          recommendedInternships: [
+            { id: "i1", company: "Amazon", role: "SDE Intern", stipend: "₹40k/mo", type: "Remote" },
+            { id: "i2", company: "Cred", role: "Product Design", stipend: "₹25k/mo", type: "Bangalore" },
+          ]
+        });
+      } catch (err) {
+        console.error("Failed to load dashboard data:", err);
+        setError(err.message || "Failed to load dashboard data");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     loadData();
   }, []);
@@ -96,6 +123,24 @@ export default function StudentDashboardMain() {
         <div className="animate-pulse flex flex-col items-center gap-4">
           <div className="h-12 w-12 bg-blue-200 rounded-full"></div>
           <div className="h-4 w-32 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-4xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Failed to load dashboard</h2>
+          <p className="text-gray-600 mb-4">{error || "Please try again later"}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );

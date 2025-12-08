@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import facultyService from "../../services/Facultyservice";
 
 // MAIN COMPONENT IMPORTS
 import ManageClasses from "./manageclasses/ManageClasses.jsx";
@@ -23,6 +24,24 @@ export default function FacultyDashboardMain({
   setClassList,
 }) {
   const [isCreating, setIsCreating] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch classes on component mount
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  const fetchClasses = async () => {
+    try {
+      setLoading(true);
+      const classes = await facultyService.getClasses();
+      setClassList(classes);
+    } catch (error) {
+      console.error("Error fetching classes:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ------------------------ CLASS ACTION HANDLERS -------------------------
 
@@ -33,20 +52,32 @@ export default function FacultyDashboardMain({
     setIsCreating(false);
   };
 
-  const handleDelete = (cls) => {
+  const handleDelete = async (cls) => {
     if (window.confirm(`Delete ${cls.className}?`)) {
-      setClassList((prev) => prev.filter((c) => c.id !== cls.id));
+      try {
+        await facultyService.deleteClass(cls.id || cls._id);
+        setClassList((prev) => prev.filter((c) => c.id !== cls.id && c._id !== cls._id));
+      } catch (error) {
+        console.error("Error deleting class:", error);
+        alert("Failed to delete class. Please try again.");
+      }
     }
   };
 
-  const handleEdit = (cls) => {
+  const handleEdit = async (cls) => {
     const newName = prompt("New class name:", cls.className);
-    if (newName) {
-      setClassList((prev) =>
-        prev.map((c) =>
-          c.id === cls.id ? { ...c, className: newName } : c
-        )
-      );
+    if (newName && newName.trim()) {
+      try {
+        const updated = await facultyService.updateClass(cls.id || cls._id, { className: newName.trim() });
+        setClassList((prev) =>
+          prev.map((c) =>
+            (c.id === cls.id || c._id === cls._id) ? { ...c, className: newName.trim() } : c
+          )
+        );
+      } catch (error) {
+        console.error("Error updating class:", error);
+        alert("Failed to update class. Please try again.");
+      }
     }
   };
 
@@ -55,7 +86,7 @@ export default function FacultyDashboardMain({
   };
 
   const handleGenerateLink = (classId) => {
-    return `https://edusphere.com/join/${classId}`;
+    return `${window.location.origin}/join/${classId}`;
   };
 
   // ------------------------ ROUTING SYSTEM --------------------------

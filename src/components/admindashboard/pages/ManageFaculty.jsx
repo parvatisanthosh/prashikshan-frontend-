@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   TrashIcon, 
   UserIcon, 
@@ -10,16 +10,64 @@ import {
   EyeIcon,
   XMarkIcon,
   CheckIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ArrowPathIcon
 } from "@heroicons/react/24/solid";
 import { UserPlusIcon } from "@heroicons/react/24/outline";
+import adminService from "../../../services/adminService";
 
-export default function ManageFaculty({ facultyList, removeFaculty, setActivePage }) {
+export default function ManageFaculty({ setActivePage }) {
+  const [facultyList, setFacultyList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDept, setSelectedDept] = useState("all");
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [viewDetails, setViewDetails] = useState(null);
   const [sortBy, setSortBy] = useState("name");
+
+  // Fetch faculty data on mount
+  useEffect(() => {
+    fetchFaculty();
+  }, []);
+
+  const fetchFaculty = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await adminService.getFaculty({ limit: 100 });
+      
+      // Transform backend data to match frontend expectations
+      const transformedFaculty = (response.faculty || []).map(faculty => ({
+        id: faculty.id,
+        name: faculty.name || faculty.user?.displayName || 'Unknown',
+        email: faculty.email || faculty.user?.email || '',
+        dept: faculty.department || '',
+        phone: faculty.phone || faculty.user?.phone || '',
+        employeeId: faculty.employeeId || '',
+        designation: faculty.designation || '',
+        specialization: faculty.specialization || ''
+      }));
+
+      setFacultyList(transformedFaculty);
+    } catch (err) {
+      console.error('Error fetching faculty:', err);
+      setError(err.message || "Failed to fetch faculty data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeFaculty = async (id) => {
+    try {
+      await adminService.deleteFaculty(id);
+      setFacultyList((prev) => prev.filter((f) => f.id !== id));
+      setDeleteConfirm(null);
+    } catch (err) {
+      console.error('Error deleting faculty:', err);
+      setError(err.message || "Failed to delete faculty.");
+    }
+  };
 
   // Get unique departments from faculty list
   const departments = ["all", ...new Set(facultyList.map(f => f.dept))];
@@ -43,7 +91,6 @@ export default function ManageFaculty({ facultyList, removeFaculty, setActivePag
 
   const handleDelete = (id) => {
     removeFaculty(id);
-    setDeleteConfirm(null);
   };
 
   // Delete Confirmation Modal

@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { CalendarDaysIcon, CheckCircleIcon, XCircleIcon, ClockIcon, UserIcon } from '@heroicons/react/24/solid';
-import { getBookings, confirmBooking as confirmBookingAPI, cancelBooking as cancelBookingAPI } from './apiService';
+import mentorService from '../../services/mentorService';
 
+
+function formatDate(dateString) {
+    try {
+        const date = new Date(dateString);
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        return date.toLocaleDateString('en-US', options);
+    } catch (error) {
+        return dateString; // Fallback to original string if parsing fails
+    }
+}
 export default function BookingCalendar() {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -12,7 +22,7 @@ export default function BookingCalendar() {
         async function fetchBookings() {
             setLoading(true);
             try {
-                const data = await getBookings();
+                const data = await mentorService.getBookings();
                 setBookings(data);
             } catch (error) {
                 console.error('Error fetching bookings:', error);
@@ -33,7 +43,7 @@ export default function BookingCalendar() {
     // Handle booking actions
     const handleConfirm = async (bookingId) => {
         try {
-            await confirmBookingAPI(bookingId);
+            await mentorService.confirmBooking(bookingId);
             setBookings(prev => prev.map(b => 
                 b.id === bookingId ? { ...b, status: 'Confirmed' } : b
             ));
@@ -45,7 +55,7 @@ export default function BookingCalendar() {
     const handleCancel = async (bookingId) => {
         if (window.confirm('Are you sure you want to cancel this booking?')) {
             try {
-                await cancelBookingAPI(bookingId);
+                await mentorService.cancelBooking(bookingId);
                 setBookings(prev => prev.filter(b => b.id !== bookingId));
             } catch (error) {
                 console.error('Error cancelling booking:', error);

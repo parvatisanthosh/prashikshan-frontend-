@@ -13,8 +13,9 @@ import {
   EyeIcon,
   EyeSlashIcon,
 } from "@heroicons/react/24/solid";
+import adminService from "../../../services/adminService";
 
-export default function AddFaculty({ addFaculty, setActivePage }) {
+export default function AddFaculty({ setActivePage }) {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -107,45 +108,40 @@ export default function AddFaculty({ addFaculty, setActivePage }) {
     setLoading(true);
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/faculty/add', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData)
-      // });
-      // const data = await response.json();
-
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      addFaculty({
-        id: Date.now(),
-        name: `Dr. ${formData.firstName} ${formData.lastName}`,
+      // Call backend API to create faculty
+      const facultyData = {
+        name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
-        dept: formData.department,
         phone: formData.phone,
-        facultyId: formData.facultyId,
+        employeeId: formData.facultyId,
+        department: formData.department,
         specialization: formData.specialization,
-      });
+        password: formData.password
+      };
 
-      setSuccess(`✓ ${formData.firstName} ${formData.lastName} has been successfully added as faculty member!`);
-      
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        facultyId: "",
-        department: "",
-        specialization: "",
-        password: "",
-        confirmPassword: "",
-      });
+      const response = await adminService.createFaculty(facultyData);
 
-      setTimeout(() => setSuccess(""), 5000);
+      if (response.success) {
+        setSuccess(`✓ ${formData.firstName} ${formData.lastName} has been successfully added as faculty member!`);
+        
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          facultyId: "",
+          department: "",
+          specialization: "",
+          password: "",
+          confirmPassword: "",
+        });
+
+        setTimeout(() => setSuccess(""), 5000);
+      }
 
     } catch (error) {
       console.error('Error adding faculty:', error);
-      setErrors({ submit: 'Failed to add faculty. Please try again.' });
+      setErrors({ submit: error.message || 'Failed to add faculty. Please try again.' });
     } finally {
       setLoading(false);
     }

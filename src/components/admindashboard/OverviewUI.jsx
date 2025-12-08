@@ -18,9 +18,9 @@ import {
 } from "@heroicons/react/24/solid";
 import { ArrowUpIcon, ArrowDownIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import adminService from "../../services/adminService";
 
 export default function OverviewUI() {
-  const [facultyCount] = useState(142);
   const [showAllActivities, setShowAllActivities] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -42,48 +42,106 @@ export default function OverviewUI() {
     fetchDashboardData();
   }, []);
 
-  // --- Backend-Ready API Simulation (GET Request Pattern) ---
+  // --- Backend API Integration ---
   const fetchDashboardData = async () => {
     setLoading(true);
     
     try {
-      // TODO: Replace with actual API calls when backend is ready
-      // Example API integration:
-      // const [statsRes, activitiesRes, analyticsRes, placementRes] = await Promise.all([
-      //   fetch('/api/dashboard/stats'),
-      //   fetch('/api/dashboard/activities'),
-      //   fetch('/api/dashboard/analytics'),
-      //   fetch('/api/placements/chart-data')
-      // ]);
-      // const statsData = await statsRes.json();
-      // setStats(statsData.data);
+      // Fetch dashboard stats from backend
+      const dashboardStats = await adminService.getDashboardStats();
       
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
-      // Mock data - Replace these with actual API responses
-      const mockStats = [
-        { label: "Total Faculty", value: facultyCount || 0, change: "+12%", isPositive: true, icon: UserGroupIcon, gradient: "from-indigo-500 to-purple-600", bgColor: "bg-indigo-50", textColor: "text-indigo-600" },
-        { label: "Total Students", value: "1,280", change: "+8%", isPositive: true, icon: AcademicCapIcon, gradient: "from-green-500 to-emerald-600", bgColor: "bg-green-50", textColor: "text-green-600" },
-        { label: "Partner Companies", value: "63", change: "+5", isPositive: true, icon: BuildingOffice2Icon, gradient: "from-amber-500 to-orange-600", bgColor: "bg-amber-50", textColor: "text-amber-600" },
-        { label: "Active Placements", value: "24", change: "+18%", isPositive: true, icon: ChartBarIcon, gradient: "from-blue-500 to-cyan-600", bgColor: "bg-blue-50", textColor: "text-blue-600" },
+      // Transform backend data into stats format
+      const transformedStats = [
+        { 
+          label: "Total Faculty", 
+          value: dashboardStats.totalFaculty || 0, 
+          change: "+12%", 
+          isPositive: true, 
+          icon: UserGroupIcon, 
+          gradient: "from-indigo-500 to-purple-600", 
+          bgColor: "bg-indigo-50", 
+          textColor: "text-indigo-600" 
+        },
+        { 
+          label: "Total Students", 
+          value: dashboardStats.totalStudents?.toLocaleString() || "0", 
+          change: "+8%", 
+          isPositive: true, 
+          icon: AcademicCapIcon, 
+          gradient: "from-green-500 to-emerald-600", 
+          bgColor: "bg-green-50", 
+          textColor: "text-green-600" 
+        },
+        { 
+          label: "Partner Companies", 
+          value: dashboardStats.totalCompanies?.toString() || "0", 
+          change: "+5", 
+          isPositive: true, 
+          icon: BuildingOffice2Icon, 
+          gradient: "from-amber-500 to-orange-600", 
+          bgColor: "bg-amber-50", 
+          textColor: "text-amber-600" 
+        },
+        { 
+          label: "Active Placements", 
+          value: dashboardStats.activePlacements?.toString() || dashboardStats.totalInternships?.toString() || "0", 
+          change: "+18%", 
+          isPositive: true, 
+          icon: ChartBarIcon, 
+          gradient: "from-blue-500 to-cyan-600", 
+          bgColor: "bg-blue-50", 
+          textColor: "text-blue-600" 
+        },
       ];
 
-      const mockActivities = [
-        { id: 1, title: "New faculty member added", description: "Dr. Rajesh Kumar joined Computer Science dept", time: "2 hours ago", date: "Dec 06, 2025", user: "Admin", icon: CheckCircleIcon, iconColor: "text-green-600", iconBg: "bg-green-100" },
-        { id: 2, title: "Placement drive scheduled", description: "Tech Corp visiting campus on Dec 15", time: "5 hours ago", date: "Dec 06, 2025", user: "Placement Officer", icon: ClockIcon, iconColor: "text-blue-600", iconBg: "bg-blue-100" },
-        { id: 3, title: "New partnership MoU signed", description: "Agreement finalized with Innovation Labs", time: "1 day ago", date: "Dec 05, 2025", user: "Director", icon: BuildingOffice2Icon, iconColor: "text-amber-600", iconBg: "bg-amber-100" },
-        { id: 4, title: "System notification", description: "Monthly report generation completed", time: "2 days ago", date: "Dec 04, 2025", user: "System", icon: BellAlertIcon, iconColor: "text-purple-600", iconBg: "bg-purple-100" },
-        { id: 5, title: "Student batch registered", description: "120 new students enrolled for 2025 batch", time: "3 days ago", date: "Dec 03, 2025", user: "Admission Officer", icon: AcademicCapIcon, iconColor: "text-indigo-600", iconBg: "bg-indigo-100" },
-        { id: 6, title: "Faculty training session", description: "AI/ML workshop completed successfully", time: "4 days ago", date: "Dec 02, 2025", user: "Training Dept", icon: UserGroupIcon, iconColor: "text-pink-600", iconBg: "bg-pink-100" },
+      // Transform recent activity from backend or use defaults
+      const transformedActivities = (dashboardStats.recentActivity || []).map((activity, index) => ({
+        id: activity.id || index + 1,
+        title: activity.title || activity.action || "System activity",
+        description: activity.description || activity.details || "",
+        time: activity.time || getTimeAgo(activity.createdAt),
+        date: activity.date || formatDate(activity.createdAt),
+        user: activity.user || activity.performedBy || "System",
+        icon: getActivityIcon(activity.type),
+        iconColor: getActivityIconColor(activity.type),
+        iconBg: getActivityIconBg(activity.type)
+      }));
+
+      // If no activities from backend, use placeholder
+      const activitiesToShow = transformedActivities.length > 0 ? transformedActivities : [
+        { id: 1, title: "Dashboard loaded", description: "Admin dashboard data refreshed", time: "Just now", date: new Date().toLocaleDateString(), user: "System", icon: CheckCircleIcon, iconColor: "text-green-600", iconBg: "bg-green-100" },
       ];
 
-      const mockAnalytics = [
-        { category: "Placement Statistics", metrics: [{ label: "Total Students Eligible", value: "850", icon: UserGroupIcon }, { label: "Students Placed", value: "744", icon: CheckCircleIcon }, { label: "Placement Rate", value: "87.5%", icon: ArrowTrendingUpIcon }, { label: "Average Package", value: "₹6.2L", icon: ChartBarIcon }, { label: "Highest Package", value: "₹28L", icon: SparklesIcon }, { label: "Companies Visited", value: "156", icon: BuildingOffice2Icon }] },
-        { category: "Department-wise Placement", metrics: [{ label: "Computer Science", value: "95%", icon: AcademicCapIcon }, { label: "Electronics", value: "92%", icon: AcademicCapIcon }, { label: "Mechanical", value: "85%", icon: AcademicCapIcon }, { label: "Civil Engineering", value: "78%", icon: AcademicCapIcon }, { label: "Information Technology", value: "94%", icon: AcademicCapIcon }, { label: "Electrical", value: "88%", icon: AcademicCapIcon }] },
-        { category: "Recruitment Timeline", metrics: [{ label: "Q1 Placements", value: "156", icon: CalendarIcon }, { label: "Q2 Placements", value: "198", icon: CalendarIcon }, { label: "Q3 Placements", value: "234", icon: CalendarIcon }, { label: "Q4 Placements (Projected)", value: "156", icon: CalendarIcon }, { label: "Total Offers", value: "892", icon: CheckCircleIcon }, { label: "Multiple Offers", value: "148", icon: SparklesIcon }] },
+      // Analytics data from reports
+      const [usersReport, internshipsReport, coursesReport] = await Promise.all([
+        adminService.getUsersReport().catch(() => ({})),
+        adminService.getInternshipsReport().catch(() => ({})),
+        adminService.getCoursesReport().catch(() => ({}))
+      ]);
+
+      const transformedAnalytics = [
+        { 
+          category: "Placement Statistics", 
+          metrics: [
+            { label: "Total Students Eligible", value: usersReport.totalStudents?.toString() || dashboardStats.totalStudents?.toString() || "0", icon: UserGroupIcon },
+            { label: "Students Placed", value: internshipsReport.totalApplications?.toString() || "0", icon: CheckCircleIcon },
+            { label: "Placement Rate", value: `${((internshipsReport.totalApplications / (usersReport.totalStudents || 1)) * 100).toFixed(1)}%`, icon: ArrowTrendingUpIcon },
+            { label: "Active Internships", value: internshipsReport.activeInternships?.toString() || "0", icon: ChartBarIcon },
+            { label: "Total Internships", value: internshipsReport.totalInternships?.toString() || "0", icon: SparklesIcon },
+            { label: "Companies", value: dashboardStats.totalCompanies?.toString() || "0", icon: BuildingOffice2Icon }
+          ] 
+        },
+        { 
+          category: "Course Statistics", 
+          metrics: [
+            { label: "Total Courses", value: coursesReport.totalCourses?.toString() || "0", icon: AcademicCapIcon },
+            { label: "Total Enrollments", value: coursesReport.totalEnrollments?.toString() || "0", icon: UserGroupIcon },
+            { label: "Popular Courses", value: (coursesReport.popularCourses?.length || 0).toString(), icon: ArrowTrendingUpIcon }
+          ] 
+        },
       ];
 
-      // Mock placement chart data - structured for API response
+      // Mock placement chart data - can be enhanced with actual API
       const mockPlacementData = {
         trend: [
           { month: "Jan", CS: 45, IT: 38, ECE: 32, Mech: 28, Civil: 22, Electrical: 30 },
@@ -95,82 +153,97 @@ export default function OverviewUI() {
         ],
         departmentStats: {
           "All Departments": {
-            totalStudents: 850,
-            placed: 744,
+            totalStudents: dashboardStats.totalStudents || 850,
+            placed: internshipsReport.totalApplications || 744,
             placementRate: 87.5,
             avgPackage: 6.2,
             medianPackage: 5.8,
             highestPackage: 28.0,
             lowestPackage: 3.5
-          },
-          "Computer Science": {
-            totalStudents: 180,
-            placed: 171,
-            placementRate: 95.0,
-            avgPackage: 8.5,
-            medianPackage: 7.8,
-            highestPackage: 28.0,
-            lowestPackage: 4.5
-          },
-          "Information Technology": {
-            totalStudents: 150,
-            placed: 141,
-            placementRate: 94.0,
-            avgPackage: 7.8,
-            medianPackage: 7.2,
-            highestPackage: 24.0,
-            lowestPackage: 4.2
-          },
-          "Electronics & Communication": {
-            totalStudents: 140,
-            placed: 129,
-            placementRate: 92.0,
-            avgPackage: 6.5,
-            medianPackage: 6.0,
-            highestPackage: 18.0,
-            lowestPackage: 3.8
-          },
-          "Mechanical": {
-            totalStudents: 160,
-            placed: 136,
-            placementRate: 85.0,
-            avgPackage: 5.5,
-            medianPackage: 5.2,
-            highestPackage: 15.0,
-            lowestPackage: 3.5
-          },
-          "Civil Engineering": {
-            totalStudents: 120,
-            placed: 94,
-            placementRate: 78.0,
-            avgPackage: 4.8,
-            medianPackage: 4.5,
-            highestPackage: 12.0,
-            lowestPackage: 3.5
-          },
-          "Electrical": {
-            totalStudents: 100,
-            placed: 88,
-            placementRate: 88.0,
-            avgPackage: 6.0,
-            medianPackage: 5.6,
-            highestPackage: 16.5,
-            lowestPackage: 3.8
           }
         }
       };
 
-      setStats(mockStats);
-      setRecentActivities(mockActivities);
-      setAnalyticsData(mockAnalytics);
+      setStats(transformedStats);
+      setRecentActivities(activitiesToShow);
+      setAnalyticsData(transformedAnalytics);
       setPlacementChartData(mockPlacementData.trend);
       setDepartmentStats(mockPlacementData.departmentStats);
       
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      // Set default values on error
+      setStats([
+        { label: "Total Faculty", value: 0, change: "0%", isPositive: true, icon: UserGroupIcon, gradient: "from-indigo-500 to-purple-600", bgColor: "bg-indigo-50", textColor: "text-indigo-600" },
+        { label: "Total Students", value: "0", change: "0%", isPositive: true, icon: AcademicCapIcon, gradient: "from-green-500 to-emerald-600", bgColor: "bg-green-50", textColor: "text-green-600" },
+        { label: "Partner Companies", value: "0", change: "0", isPositive: true, icon: BuildingOffice2Icon, gradient: "from-amber-500 to-orange-600", bgColor: "bg-amber-50", textColor: "text-amber-600" },
+        { label: "Active Placements", value: "0", change: "0%", isPositive: true, icon: ChartBarIcon, gradient: "from-blue-500 to-cyan-600", bgColor: "bg-blue-50", textColor: "text-blue-600" },
+      ]);
+      setRecentActivities([]);
+      setAnalyticsData([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper functions for activity icons
+  const getActivityIcon = (type) => {
+    const iconMap = {
+      'user_added': CheckCircleIcon,
+      'placement': ClockIcon,
+      'partnership': BuildingOffice2Icon,
+      'system': BellAlertIcon,
+      'enrollment': AcademicCapIcon,
+      'training': UserGroupIcon
+    };
+    return iconMap[type] || CheckCircleIcon;
+  };
+
+  const getActivityIconColor = (type) => {
+    const colorMap = {
+      'user_added': 'text-green-600',
+      'placement': 'text-blue-600',
+      'partnership': 'text-amber-600',
+      'system': 'text-purple-600',
+      'enrollment': 'text-indigo-600',
+      'training': 'text-pink-600'
+    };
+    return colorMap[type] || 'text-gray-600';
+  };
+
+  const getActivityIconBg = (type) => {
+    const bgMap = {
+      'user_added': 'bg-green-100',
+      'placement': 'bg-blue-100',
+      'partnership': 'bg-amber-100',
+      'system': 'bg-purple-100',
+      'enrollment': 'bg-indigo-100',
+      'training': 'bg-pink-100'
+    };
+    return bgMap[type] || 'bg-gray-100';
+  };
+
+  const getTimeAgo = (dateString) => {
+    if (!dateString) return 'Recently';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffHours < 1) return 'Just now';
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString();
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return new Date().toLocaleDateString();
+    return new Date(dateString).toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
   };
 
   // --- Utility Functions ---

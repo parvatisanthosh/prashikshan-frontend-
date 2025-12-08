@@ -4,55 +4,21 @@ import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "../components/studentdashboard/Navbar.jsx";
 import Sidebar from "../components/studentdashboard/sidebar.jsx";
 import Footer from "../components/studentdashboard/Footer.jsx";
-
-
+import studentService from "../services/studentService";
 
 /**
  * ActivityTrackerPage.jsx
- * - Architecture: Offline-first (localStorage) with API stub for future backend.
+ * - Architecture: API-first with studentService backend integration.
  * - Features: Gamification (XP/Levels), Certificate Vault, Advanced Filtering.
  */
 
-const USE_MOCK_API = false; // Set to true to simulate fetching from a server instead of localStorage
-
-const MOCK_USER = {
-  id: "u1",
-  name: "Aisha Verma",
-  roll: "CS2024-001",
-  level: 5,
-  xp: 2400,
-  nextLevelXp: 3000
-};
-
-/* -------------------- Data Service Layer -------------------- */
-const STORAGE_KEY = "student_activity_data_v2";
-
-// Helper to simulate API call
-const api = {
-  fetchData: async () => {
-    // Simulate network delay
-    await new Promise(r => setTimeout(r, 600));
-    
-    if (USE_MOCK_API) {
-      // Return hardcoded mock data if backend isn't ready but we want to test "server" response
-      return {
-        activities: [
-           { id: "1", title: "Hackathon Winner", date: "2023-11-10", type: "Award", tags: ["Competition", "Coding"], points: 500 },
-        ],
-        user: MOCK_USER
-      };
-    } else {
-      // "Offline First" mode - read from localStorage
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : { activities: [], user: MOCK_USER };
-    }
-  },
-  
-  saveData: async (data) => {
-    // In a real app, this would be a POST/PUT request
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    return true;
-  }
+const DEFAULT_USER = {
+  id: "",
+  name: "Student",
+  roll: "",
+  level: 1,
+  xp: 0,
+  nextLevelXp: 500
 };
 
 /* -------------------- Main Component -------------------- */
@@ -65,7 +31,8 @@ export default function ActivityTrackerPage() {
 
   // --- Data State ---
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(MOCK_USER);
+  const [error, setError] = useState(null);
+  const [user, setUser] = useState(DEFAULT_USER);
   const [activities, setActivities] = useState([]);
   
   // --- UI State ---
@@ -76,30 +43,56 @@ export default function ActivityTrackerPage() {
   const [editingActivity, setEditingActivity] = useState(null);
   const [selectedActivity, setSelectedActivity] = useState(null); // For detail view
 
-  // --- Initial Load ---
+  // --- Initial Load from API ---
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+      setError(null);
       try {
-        const data = await api.fetchData();
-        setActivities(data.activities || []);
-        // Calculate dynamic user stats based on activities if needed
-        setUser(data.user); 
+        // Fetch activity logs and profile from API
+        const [activitiesResponse, profileResponse] = await Promise.all([
+          studentService.getActivityLogs(),
+          studentService.getProfile()
+        ]);
+
+        const logs = activitiesResponse.logs || activitiesResponse.activities || [];
+        const profile = profileResponse.profile || {};
+
+        // Transform backend data to our format
+        const transformedActivities = logs.map(log => ({
+          id: log.id,
+          title: log.title || log.activityName,
+          date: log.date || log.activityDate,
+          type: log.type || log.category || "Workshop",
+          tags: log.tags || [],
+          points: log.points || log.xpEarned || 100,
+          organiser: log.organizer || log.organizerName,
+          description: log.description,
+          attachments: log.attachments || [],
+          createdAt: log.createdAt
+        }));
+
+        // Calculate XP from activities
+        const totalXp = transformedActivities.reduce((sum, a) => sum + (a.points || 0), 0);
+
+        setActivities(transformedActivities);
+        setUser({
+          id: profile.id || profile.userId || "",
+          name: profile.displayName || "Student",
+          roll: profile.enrollmentNumber || "",
+          level: Math.floor(totalXp / 500) + 1,
+          xp: totalXp,
+          nextLevelXp: (Math.floor(totalXp / 500) + 1) * 500
+        });
       } catch (e) {
         console.error("Failed to load data", e);
+        setError(e.message || "Failed to load activity data");
       } finally {
         setLoading(false);
       }
     };
     load();
   }, []);
-
-  // --- Auto-Save Effect ---
-  useEffect(() => {
-    if (!loading) {
-      api.saveData({ user, activities });
-    }
-  }, [activities, user, loading]);
 
   // --- Derived State ---
   const filteredActivities = useMemo(() => {
@@ -135,28 +128,60 @@ export default function ActivityTrackerPage() {
   }, [activities, query, filterType, filterTime]);
 
   // --- Actions ---
-  const handleSaveActivity = (activity) => {
-    if (activity.id) {
-      setActivities(prev => prev.map(a => a.id === activity.id ? activity : a));
-    } else {
-      const newActivity = { 
-        ...activity, 
-        id: `act_${Date.now()}`, 
-        createdAt: new Date().toISOString(),
-        points: 100 // Mock points logic
-      };
-      setActivities(prev => [newActivity, ...prev]);
-      
-      // Gamification: Add XP
-      setUser(prev => ({ ...prev, xp: prev.xp + 100 }));
+  const handleSaveActivity = async (activity) => {
+    try {
+      if (activity.id) {
+        // Update existing activity
+        await studentService.updateActivityLog(activity.id, {
+          title: activity.title,
+          date: activity.date,
+          type: activity.type,
+          description: activity.description,
+          tags: activity.tags
+        });
+        setActivities(prev => prev.map(a => a.id === activity.id ? activity : a));
+      } else {
+        // Create new activity
+        const response = await studentService.createActivityLog({
+          title: activity.title,
+          date: activity.date,
+          type: activity.type,
+          description: activity.description,
+          tags: activity.tags
+        });
+        
+        const newActivity = { 
+          ...activity, 
+          id: response.log?.id || `act_${Date.now()}`, 
+          createdAt: new Date().toISOString(),
+          points: 100
+        };
+        setActivities(prev => [newActivity, ...prev]);
+        
+        // Gamification: Add XP
+        setUser(prev => ({ 
+          ...prev, 
+          xp: prev.xp + 100,
+          level: Math.floor((prev.xp + 100) / 500) + 1
+        }));
+      }
+      setShowModal(false);
+      setEditingActivity(null);
+    } catch (err) {
+      console.error("Error saving activity:", err);
+      alert(err.message || "Failed to save activity");
     }
-    setShowModal(false);
-    setEditingActivity(null);
   };
 
-  const handleDeleteActivity = (id) => {
+  const handleDeleteActivity = async (id) => {
     if(confirm("Are you sure you want to delete this activity?")) {
-      setActivities(prev => prev.filter(a => a.id !== id));
+      try {
+        await studentService.deleteActivityLog(id);
+        setActivities(prev => prev.filter(a => a.id !== id));
+      } catch (err) {
+        console.error("Error deleting activity:", err);
+        alert(err.message || "Failed to delete activity");
+      }
     }
   };
 
@@ -172,6 +197,17 @@ export default function ActivityTrackerPage() {
              <div className="h-4 w-32 bg-gray-300 rounded"></div>
           </div>
        </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center">
+        <div className="text-center text-red-600">
+          <p className="text-lg font-semibold">Error loading activities</p>
+          <p className="text-sm">{error}</p>
+        </div>
+      </div>
     );
   }
 

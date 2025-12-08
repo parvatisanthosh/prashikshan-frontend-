@@ -2,47 +2,41 @@
 import React, { useEffect, useState, useRef } from "react";
 import Navbar from "../components/studentdashboard/Navbar.jsx";
 import Sidebar from "../components/studentdashboard/sidebar.jsx";
+import studentService from "../services/studentService";
 
-
-const USE_MOCK = true;
-
-const MOCK_PROFILE_DATA = {
-  id: "u1001",
-  name: "Divyam Gupta",
-  roll: "CS2026-101",
-  role: "CS Undergrad",
-  pronouns: "He/Him",
-  bio: "3rd year Computer Science student passionate about Fullstack Development and AI. Building scalable web apps and exploring LLMs.",
-  email: "divyam.gupta@example.com",
-  collegeEmail: "divyam@iiitn.ac.in",
+const DEFAULT_PROFILE = {
+  id: "",
+  name: "Student",
+  roll: "",
+  role: "Student",
+  pronouns: "",
+  bio: "",
+  email: "",
+  collegeEmail: "",
   collegeEmailVerified: false,
-  phone: "+91 98765 43210",
-  location: "Nagpur, Maharashtra",
+  phone: "",
+  location: "",
   avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=500&auto=format&fit=crop&q=60",
   coverUrl: "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1000&auto=format&fit=crop&q=60",
-  skills: ["React", "Node.js", "Python", "MongoDB", "Tailwind CSS", "Git"],
+  skills: [],
   social: {
-    linkedin: "linkedin.com/in/divyam",
-    github: "github.com/divyam",
-    website: "divyam.dev"
+    linkedin: "",
+    github: "",
+    website: ""
   },
   stats: {
-    level: 5,
-    xp: 2450,
-    nextLevelXp: 3000,
-    profileStrength: 85,
-    badges: ["Scholar", "Coder", "Contributor"]
+    level: 1,
+    xp: 0,
+    nextLevelXp: 1000,
+    profileStrength: 0,
+    badges: []
   },
   resume: {
     url: "#",
-    name: "Divyam_Gupta_Resume.pdf",
-    lastUpdated: "2024-10-15"
+    name: "No resume uploaded",
+    lastUpdated: ""
   },
-  activity: [
-    { id: 1, text: "Completed 'Advanced React' course", date: "2 days ago", type: "course" },
-    { id: 2, text: "Earned 'Backend Master' badge", date: "1 week ago", type: "badge" },
-    { id: 3, text: "Applied to Google Internship", date: "2 weeks ago", type: "job" }
-  ]
+  activity: []
 };
 
 export default function ProfilePage() {
@@ -52,6 +46,7 @@ export default function ProfilePage() {
     window.location.hash = `#/${route}`;
   }
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [profile, setProfile] = useState(null);
   
   // UI State for Modals
@@ -71,26 +66,59 @@ export default function ProfilePage() {
   useEffect(() => {
     async function fetchProfile() {
       setLoading(true);
+      setError(null);
       try {
-        if (USE_MOCK) {
-          await new Promise(r => setTimeout(r, 800));
-          const localData = localStorage.getItem("sih_profile_data");
-          setProfile(localData ? JSON.parse(localData) : MOCK_PROFILE_DATA);
-        }
+        const response = await studentService.getProfile();
+        const data = response.profile || response;
+        
+        // Transform backend data to our profile format
+        const transformedProfile = {
+          ...DEFAULT_PROFILE,
+          id: data.id || data.userId || "",
+          name: data.displayName || data.name || "Student",
+          roll: data.enrollmentNumber || "",
+          role: data.department || "Student",
+          pronouns: data.pronouns || "",
+          bio: data.bio || "",
+          email: data.email || "",
+          collegeEmail: data.collegeEmail || "",
+          collegeEmailVerified: data.collegeEmailVerified || false,
+          phone: data.phone || "",
+          location: data.location || "",
+          avatarUrl: data.profilePicture || data.avatarUrl || DEFAULT_PROFILE.avatarUrl,
+          coverUrl: data.coverPhoto || data.coverUrl || DEFAULT_PROFILE.coverUrl,
+          skills: data.skills || [],
+          social: {
+            linkedin: data.linkedIn || data.social?.linkedin || "",
+            github: data.github || data.social?.github || "",
+            website: data.website || data.social?.website || ""
+          },
+          stats: {
+            level: data.level || 1,
+            xp: data.xp || 0,
+            nextLevelXp: data.nextLevelXp || 1000,
+            profileStrength: data.profileStrength || 50,
+            badges: data.badges || []
+          },
+          resume: {
+            url: data.resume?.url || "#",
+            name: data.resume?.name || "No resume uploaded",
+            lastUpdated: data.resume?.lastUpdated || ""
+          },
+          activity: data.activity || []
+        };
+        
+        setProfile(transformedProfile);
       } catch (e) {
         console.error("Failed to fetch profile", e);
+        setError(e.message || "Failed to load profile");
+        setProfile(DEFAULT_PROFILE);
       } finally {
         setLoading(false);
       }
     }
     fetchProfile();
   }, []);
-
-  useEffect(() => {
-    if (profile && USE_MOCK) {
-      localStorage.setItem("sih_profile_data", JSON.stringify(profile));
-    }
-  }, [profile]);
 
   // --- Handlers ---
 
@@ -99,10 +127,26 @@ export default function ProfilePage() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleSaveProfile = (updatedProfile) => {
-    setProfile(updatedProfile);
-    setEditModalOpen(false);
-    showToast("Profile updated successfully!");
+  const handleSaveProfile = async (updatedProfile) => {
+    try {
+      await studentService.updateProfile({
+        displayName: updatedProfile.name,
+        bio: updatedProfile.bio,
+        phone: updatedProfile.phone,
+        location: updatedProfile.location,
+        skills: updatedProfile.skills,
+        linkedIn: updatedProfile.social?.linkedin,
+        github: updatedProfile.social?.github,
+        website: updatedProfile.social?.website,
+        pronouns: updatedProfile.pronouns
+      });
+      setProfile(updatedProfile);
+      setEditModalOpen(false);
+      showToast("Profile updated successfully!");
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      showToast("Failed to update profile");
+    }
   };
 
   const handleVerifyEmail = (email) => {
@@ -118,21 +162,37 @@ export default function ProfilePage() {
   };
 
   // Image Upload Handlers
-  const handleBannerUpload = (e) => {
+  const handleBannerUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      setProfile(prev => ({ ...prev, coverUrl: url }));
-      showToast("Cover photo updated!");
+      try {
+        const response = await studentService.uploadCover(file);
+        setProfile(prev => ({ ...prev, coverUrl: response.coverPhoto || URL.createObjectURL(file) }));
+        showToast("Cover photo updated!");
+      } catch (err) {
+        console.error("Error uploading cover:", err);
+        // Fallback to local preview
+        const url = URL.createObjectURL(file);
+        setProfile(prev => ({ ...prev, coverUrl: url }));
+        showToast("Cover photo updated!");
+      }
     }
   };
 
-  const handleAvatarUpload = (e) => {
+  const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      setProfile(prev => ({ ...prev, avatarUrl: url }));
-      showToast("Profile picture updated!");
+      try {
+        const response = await studentService.uploadAvatar(file);
+        setProfile(prev => ({ ...prev, avatarUrl: response.profilePicture || URL.createObjectURL(file) }));
+        showToast("Profile picture updated!");
+      } catch (err) {
+        console.error("Error uploading avatar:", err);
+        // Fallback to local preview
+        const url = URL.createObjectURL(file);
+        setProfile(prev => ({ ...prev, avatarUrl: url }));
+        showToast("Profile picture updated!");
+      }
     }
   };
 
@@ -142,6 +202,17 @@ export default function ProfilePage() {
         <div className="animate-pulse flex flex-col items-center">
           <div className="h-16 w-16 bg-blue-200 rounded-full mb-4"></div>
           <div className="h-4 w-32 bg-blue-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center">
+        <div className="text-center text-red-600">
+          <p className="text-lg font-semibold">Error loading profile</p>
+          <p className="text-sm">{error}</p>
         </div>
       </div>
     );
@@ -697,14 +768,29 @@ function PrivacyModal({ onClose }) {
 
 function ResumeModal({ resume, onClose, onUpdate }) {
    const [file, setFile] = useState(null);
+   const [uploading, setUploading] = useState(false);
    
-   const handleUpload = () => {
+   const handleUpload = async () => {
       if(!file) return;
-      onUpdate({
-         name: file.name,
-         lastUpdated: new Date().toLocaleDateString(),
-         url: URL.createObjectURL(file)
-      });
+      setUploading(true);
+      try {
+        const response = await studentService.uploadResume(file);
+        onUpdate({
+           name: file.name,
+           lastUpdated: new Date().toLocaleDateString(),
+           url: response.resume?.url || URL.createObjectURL(file)
+        });
+      } catch (err) {
+        console.error("Error uploading resume:", err);
+        // Fallback to local
+        onUpdate({
+           name: file.name,
+           lastUpdated: new Date().toLocaleDateString(),
+           url: URL.createObjectURL(file)
+        });
+      } finally {
+        setUploading(false);
+      }
    };
 
    return (
@@ -727,7 +813,9 @@ function ResumeModal({ resume, onClose, onUpdate }) {
 
             <div className="flex justify-end gap-3">
                <button onClick={onClose} className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-100">Cancel</button>
-               <button onClick={handleUpload} disabled={!file} className={`px-6 py-2 text-white font-bold text-sm rounded-lg shadow-md transition-colors ${file ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed'}`}>Update Resume</button>
+               <button onClick={handleUpload} disabled={!file || uploading} className={`px-6 py-2 text-white font-bold text-sm rounded-lg shadow-md transition-colors ${file && !uploading ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed'}`}>
+                  {uploading ? 'Uploading...' : 'Update Resume'}
+               </button>
             </div>
          </div>
       </div>

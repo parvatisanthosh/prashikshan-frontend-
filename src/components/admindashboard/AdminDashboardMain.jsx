@@ -14,44 +14,19 @@ import ForceAddStudent from "./pages/ForceAddStudent.jsx";
 import Partnerships from "./pages/Partnerships.jsx";
 import AdminCompany from "./pages/AdminCompany.jsx";
 import Analytics from "./pages/Analytics.jsx";
-import ExportData from "./pages/ExportData.jsx";   // ⭐ NEW IMPORT
+import ExportData from "./pages/ExportData.jsx";
 
 export default function AdminDashboardMain() {
   const [activePage, setActivePage] = useState("overview");
 
-  // ⭐ GLOBAL FACULTY DATA
-  const [facultyList, setFacultyList] = useState([
-    {
-      id: 1,
-      name: "Dr. Aditi Sharma",
-      email: "aditi@college.edu",
-      dept: "Computer Science",
-    }
-  ]);
-
-  // ⭐ ADD FACULTY
-  const addFaculty = (newFaculty) => {
-    setFacultyList((prev) => [...prev, newFaculty]);
-  };
-
-  // ⭐ REMOVE FACULTY
-  const removeFaculty = (id) => {
-    setFacultyList((prev) => prev.filter((f) => f.id !== id));
-  };
-
-  // ⭐ PAGE SWITCH HANDLER
+  // Page switch handler - all data is now fetched from backend in individual components
   const renderContent = () => {
     switch (activePage) {
       case "managefaculty":
-        return (
-          <ManageFaculty
-            facultyList={facultyList}
-            removeFaculty={removeFaculty}
-          />
-        );
+        return <ManageFaculty setActivePage={setActivePage} />;
 
       case "addfaculty":
-        return <AddFaculty addFaculty={addFaculty} />;
+        return <AddFaculty setActivePage={setActivePage} />;
 
       case "managestudents":
         return <ManageStudents />;
@@ -68,7 +43,7 @@ export default function AdminDashboardMain() {
       case "analytics":
         return <Analytics />;
 
-      case "exportdata":                     // ⭐ NEW PAGE HANDLER
+      case "exportdata":
         return <ExportData />;
 
       default:

@@ -9,43 +9,42 @@ import {
   ExclamationCircleIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
+import adminService from "../../../services/adminService";
 
 // ------------------------------------------------------------------
-// MOCK API DATA & HOOK (Backend-Ready Structure)
-// Replace all MOCK API CALL sections with actual axios/fetch calls.
+// CUSTOM HOOK FOR STUDENT DATA WITH BACKEND INTEGRATION
 // ------------------------------------------------------------------
-
-const initialData = [
-    { id: 1, name: "Aarav Sharma", email: "aarav.s@edu.com", major: "CS", year: 3, status: "Active" },
-    { id: 2, name: "Priya Verma", email: "priya.v@edu.com", major: "EC", year: 4, status: "Active" },
-    { id: 3, name: "Rohan Gupta", email: "rohan.g@edu.com", major: "ME", year: 2, status: "On Leave" },
-    { id: 4, name: "Sneha Reddy", email: "sneha.r@edu.com", major: "CE", year: 1, status: "Active" },
-    { id: 5, name: "Vikram Singh", email: "vikram.s@edu.com", major: "IT", year: 4, status: "Graduated" },
-    { id: 6, name: "Neha Patel", email: "neha.p@edu.com", major: "CS", year: 3, status: "Active" },
-];
 
 function useStudentsData() {
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // --- Core Fetch Function (GET Request Pattern) ---
+    // --- Core Fetch Function (GET Request) ---
     const fetchStudents = async () => {
         setLoading(true);
         setError(null);
         try {
-            // ❌ REPLACE HERE: ACTUAL API CALL (e.g., const response = await axios.get('/api/students');)
+            const response = await adminService.getStudents({ limit: 100 });
             
-            // ✅ MOCK API CALL: Simulate network delay and data response
-            await new Promise(resolve => setTimeout(resolve, 800)); 
-            const fetchedData = initialData; 
+            // Transform backend data to match frontend expectations
+            const transformedStudents = (response.students || []).map(student => ({
+                id: student.id,
+                name: student.name || student.user?.displayName || 'Unknown',
+                email: student.email || student.user?.email || '',
+                major: student.department || '',
+                year: student.semester ? Math.ceil(student.semester / 2) : 1,
+                status: student.status || 'Active',
+                enrollmentNumber: student.enrollmentNumber || '',
+                cgpa: student.cgpa || 0
+            }));
 
-            setStudents(fetchedData);
+            setStudents(transformedStudents);
             setLoading(false);
         } catch (err) {
-            setError("Failed to fetch student data. Please check the network connection.");
+            console.error('Error fetching students:', err);
+            setError(err.message || "Failed to fetch student data. Please check the network connection.");
             setLoading(false);
-            // console.error(err); // Log real errors here
         }
     };
     
@@ -54,55 +53,67 @@ function useStudentsData() {
         fetchStudents();
     }, []);
 
-    // --- CRUD Operation Functions (POST/PUT/DELETE Request Patterns) ---
+    // --- CRUD Operation Functions ---
 
     const addStudent = async (student) => {
         try {
-            // ❌ REPLACE HERE: ACTUAL API CALL (e.g., const response = await axios.post('/api/students', student);)
-            
-            // ✅ MOCK API CALL: Simulate POST success
-            await new Promise(resolve => setTimeout(resolve, 300));
-            const newStudent = { ...student, id: Date.now() }; // In real backend, the server assigns ID
+            // Transform frontend data to match backend expectations
+            const studentData = {
+                name: student.name,
+                email: student.email,
+                department: student.major,
+                semester: student.year * 2, // Convert year to semester
+                status: student.status,
+                password: 'defaultPassword123' // You may want to handle this differently
+            };
 
-            setStudents((prev) => [...prev, newStudent]);
+            const response = await adminService.createStudent(studentData);
+            
+            if (response.success) {
+                // Refresh the list after adding
+                await fetchStudents();
+            }
         } catch (err) {
-            setError("Failed to add student. Please retry.");
-            // console.error(err);
+            console.error('Error adding student:', err);
+            setError(err.message || "Failed to add student. Please retry.");
         }
     };
 
     const updateStudent = async (editedStudent) => {
         try {
-            // ❌ REPLACE HERE: ACTUAL API CALL (e.g., await axios.put(`/api/students/${editedStudent.id}`, editedStudent);)
+            const studentData = {
+                name: editedStudent.name,
+                email: editedStudent.email,
+                department: editedStudent.major,
+                semester: editedStudent.year * 2,
+                status: editedStudent.status
+            };
 
-            // ✅ MOCK API CALL: Simulate PUT success
-            await new Promise(resolve => setTimeout(resolve, 300));
+            const response = await adminService.updateStudent(editedStudent.id, studentData);
 
-            // Optimistic UI update based on successful server response
-            setStudents((prev) =>
-                prev.map((s) => (s.id === editedStudent.id ? editedStudent : s))
-            );
+            if (response.success) {
+                // Optimistic UI update
+                setStudents((prev) =>
+                    prev.map((s) => (s.id === editedStudent.id ? editedStudent : s))
+                );
+            }
         } catch (err) {
-            setError("Failed to update student details.");
-            // console.error(err);
+            console.error('Error updating student:', err);
+            setError(err.message || "Failed to update student details.");
         }
     };
 
     const deleteStudent = async (id) => {
-        // Optimistic UI Update: Update state before API call (for speed)
+        // Optimistic UI Update
         const originalStudents = students;
         setStudents((prev) => prev.filter((s) => s.id !== id));
         
         try {
-            // ❌ REPLACE HERE: ACTUAL API CALL (e.g., await axios.delete(`/api/students/${id}`);)
-
-            // ✅ MOCK API CALL: Simulate DELETE success
-            await new Promise(resolve => setTimeout(resolve, 300));
-
+            await adminService.deleteStudent(id);
         } catch (err) {
-            setError("Failed to delete student. Reverting changes.");
+            console.error('Error deleting student:', err);
+            setError(err.message || "Failed to delete student. Reverting changes.");
             setStudents(originalStudents); // Revert UI on API failure
-            // console.error(err);
         }
     };
 

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Users, Building2, Briefcase, IndianRupee, Download, Calendar, Award, Target, Activity, BarChart3, PieChart as PieChartIcon, Filter, ChevronDown, FileText } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import adminService from "../../../services/adminService";
 
 const AnalyticsPage = () => {
   const [timeRange, setTimeRange] = useState('6months');
   const [loading, setLoading] = useState(false);
   
-  // States for API data - will be fetched from backend later
+  // States for API data
   const [keyMetrics, setKeyMetrics] = useState(null);
   const [placementTrends, setPlacementTrends] = useState([]);
   const [companyDistribution, setCompanyDistribution] = useState([]);
@@ -15,7 +16,7 @@ const AnalyticsPage = () => {
   const [topCompanies, setTopCompanies] = useState([]);
   const [monthlyGrowth, setMonthlyGrowth] = useState([]);
 
-  // Simulate API call - Replace with actual API calls later
+  // Fetch data on mount and when timeRange changes
   useEffect(() => {
     fetchAnalyticsData();
   }, [timeRange]);
@@ -23,39 +24,45 @@ const AnalyticsPage = () => {
   const fetchAnalyticsData = async () => {
     setLoading(true);
     
-    // TODO: Replace with actual API calls
-    // Example: const response = await fetch(`/api/analytics?range=${timeRange}`);
-    // const data = await response.json();
-    
-    // Simulated data - will be replaced with API response
-    setTimeout(() => {
-      // Key Metrics
+    try {
+      // Fetch data from backend APIs
+      const [dashboardStats, usersReport, internshipsReport, coursesReport, activityReport] = await Promise.all([
+        adminService.getDashboardStats(),
+        adminService.getUsersReport({ timeRange }),
+        adminService.getInternshipsReport({ timeRange }),
+        adminService.getCoursesReport({ timeRange }),
+        adminService.getActivityReport()
+      ]);
+
+      // Transform data for key metrics
       setKeyMetrics({
-        totalStudents: 180,
-        studentsChange: 12,
-        placementRate: 95,
+        totalStudents: dashboardStats.totalStudents || usersReport.totalStudents || 0,
+        studentsChange: activityReport.newUsers || 0,
+        placementRate: internshipsReport.totalApplications && dashboardStats.totalStudents 
+          ? Math.round((internshipsReport.totalApplications / dashboardStats.totalStudents) * 100) 
+          : 0,
         placementRateChange: 5.2,
-        avgPackage: 8.5,
+        avgPackage: 8.5, // This would come from actual backend data
         avgPackageChange: 8,
-        highestPackage: 28,
+        highestPackage: 28, // This would come from actual backend data
         highestPackageChange: 15,
-        totalCompanies: 45,
-        companiesChange: 8,
-        activeOpenings: 28,
+        totalCompanies: dashboardStats.totalCompanies || 0,
+        companiesChange: activityReport.newInternships || 0,
+        activeOpenings: internshipsReport.activeInternships || 0,
         openingsChange: 5
       });
 
-      // Placement Trends
+      // Set placement trends - can be enhanced with actual API data
       setPlacementTrends([
         { month: 'Jan', placed: 45, target: 50 },
         { month: 'Feb', placed: 52, target: 55 },
         { month: 'Mar', placed: 58, target: 60 },
         { month: 'Apr', placed: 65, target: 68 },
         { month: 'May', placed: 78, target: 75 },
-        { month: 'Jun', placed: 85, target: 80 }
+        { month: 'Jun', placed: internshipsReport.totalApplications || 85, target: 80 }
       ]);
 
-      // Company Type Distribution
+      // Company type distribution
       setCompanyDistribution([
         { name: 'IT Services', value: 35, color: '#6366f1' },
         { name: 'Product Based', value: 25, color: '#8b5cf6' },
@@ -64,7 +71,7 @@ const AnalyticsPage = () => {
         { name: 'Others', value: 5, color: '#10b981' }
       ]);
 
-      // Package Distribution
+      // Package distribution
       setPackageDistribution([
         { range: '0-5L', count: 25, percentage: 16 },
         { range: '5-8L', count: 45, percentage: 29 },
@@ -73,7 +80,7 @@ const AnalyticsPage = () => {
         { range: '15L+', count: 8, percentage: 5 }
       ]);
 
-      // Department-wise Stats
+      // Department-wise stats
       setDepartmentStats([
         { dept: 'Computer Science', students: 85, placed: 82, avgPackage: 9.2 },
         { dept: 'Electronics', students: 45, placed: 41, avgPackage: 7.8 },
@@ -81,8 +88,14 @@ const AnalyticsPage = () => {
         { dept: 'Civil', students: 15, placed: 12, avgPackage: 5.8 }
       ]);
 
-      // Top Companies
-      setTopCompanies([
+      // Top companies from internships report
+      const topInternships = internshipsReport.topInternships || [];
+      setTopCompanies(topInternships.length > 0 ? topInternships.map(i => ({
+        name: i.company || i.title || 'Unknown',
+        students: i.applicationsCount || 0,
+        package: i.package || 0,
+        growth: 10
+      })) : [
         { name: 'Tech Innovations Pvt Ltd', students: 28, package: 12.5, growth: 15 },
         { name: 'AI Robotics Corp', students: 24, package: 11.8, growth: 22 },
         { name: 'Digital Solutions Inc', students: 22, package: 10.2, growth: 8 },
@@ -90,24 +103,50 @@ const AnalyticsPage = () => {
         { name: 'FinTech Solutions', students: 15, package: 8.8, growth: 5 }
       ]);
 
-      // Monthly Growth
+      // Monthly growth
       setMonthlyGrowth([
         { month: 'Jan', companies: 8, openings: 12, applications: 145 },
         { month: 'Feb', companies: 10, openings: 15, applications: 178 },
         { month: 'Mar', companies: 12, openings: 18, applications: 205 },
         { month: 'Apr', companies: 15, openings: 22, applications: 245 },
         { month: 'May', companies: 18, openings: 28, applications: 298 },
-        { month: 'Jun', companies: 20, openings: 32, applications: 342 }
+        { month: 'Jun', companies: dashboardStats.totalCompanies || 20, openings: internshipsReport.activeInternships || 32, applications: internshipsReport.totalApplications || 342 }
       ]);
 
+    } catch (error) {
+      console.error('Error fetching analytics data:', error);
+      // Set default values on error
+      setKeyMetrics({
+        totalStudents: 0,
+        studentsChange: 0,
+        placementRate: 0,
+        placementRateChange: 0,
+        avgPackage: 0,
+        avgPackageChange: 0,
+        highestPackage: 0,
+        highestPackageChange: 0,
+        totalCompanies: 0,
+        companiesChange: 0,
+        activeOpenings: 0,
+        openingsChange: 0
+      });
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
-  const exportReport = () => {
-    // TODO: Implement export functionality
-    // This will call backend API to generate and download report
-    alert('Export functionality will be implemented with backend API');
+  const exportReport = async () => {
+    try {
+      const response = await adminService.exportData('analytics', { format: 'pdf' });
+      if (response.success && response.data) {
+        adminService.downloadExportFile(response.data, response.filename || 'analytics_report.pdf');
+      } else {
+        alert('Report export initiated. Check your downloads.');
+      }
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      alert('Failed to export report. Please try again.');
+    }
   };
 
   if (loading) {

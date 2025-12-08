@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BellIcon, EnvelopeIcon, CheckCircleIcon, XMarkIcon, ClockIcon } from '@heroicons/react/24/solid';
-import { getNotifications, markNotificationAsRead as markAsReadAPI, markAllNotificationsAsRead as markAllAsReadAPI } from './apiService';
+import mentorService from '../../services/mentorService';
 
 export default function Notifications() {
     const [notifications, setNotifications] = useState([]);
@@ -12,7 +12,7 @@ export default function Notifications() {
         async function fetchNotifications() {
             setLoading(true);
             try {
-                const data = await getNotifications();
+                const data = await mentorService.getNotifications();
                 setNotifications(data);
             } catch (error) {
                 console.error('Error fetching notifications:', error);
@@ -34,7 +34,7 @@ export default function Notifications() {
     // Mark as read
     const markAsRead = async (id) => {
         try {
-            await markAsReadAPI(id);
+            await mentorService.markNotificationAsRead(id);
             setNotifications(prev => prev.map(n =>
                 n.id === id ? { ...n, read: true } : n
             ));
@@ -46,7 +46,7 @@ export default function Notifications() {
     // Mark all as read
     const markAllAsRead = async () => {
         try {
-            await markAllAsReadAPI();
+            await mentorService.markAllNotificationsAsRead();
             setNotifications(prev => prev.map(n => ({ ...n, read: true })));
         } catch (error) {
             console.error('Error marking all notifications as read:', error);

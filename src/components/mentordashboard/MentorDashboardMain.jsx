@@ -17,8 +17,8 @@ import AssignedStudents from './AssignedStudents';
 import Notifications from './Notifications';
 import ChatMentorStudents from './ChatMentorStudents';
 
-// Import API service
-import { getDashboardStats, getUpcomingSessions, getAssignedStudents } from './apiService';
+// Import API service from centralized services
+import mentorService from '../../services/mentorService';
 
 // Placeholder for features under construction
 const MissingTabUI = ({ tabName }) => (
@@ -41,9 +41,9 @@ function OverviewUI() {
             setLoading(true);
             try {
                 const [statsData, sessionsData, studentsData] = await Promise.all([
-                    getDashboardStats(),
-                    getUpcomingSessions(),
-                    getAssignedStudents(false)
+                    mentorService.getDashboardStats(),
+                    mentorService.getUpcomingSessions(),
+                    mentorService.getAssignedStudents()
                 ]);
                 
                 setStats(statsData);

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./InternshipReport.css";
-
-const API_BASE = "http://localhost:4000";
+import studentService from "../services/studentService";
 
 const LOCAL_KEYS = {
     student: "irs_student",
@@ -13,11 +12,13 @@ const LOCAL_KEYS = {
 };
 
 // Adjust these when your main portal has exact routes
-const MAIN_PROFILE_URL = "http://localhost:5173/studentdashboard";
-const MAIN_LOGS_URL = "http://localhost:5173/logbook";
-const MAIN_PROJECTS_URL = "http://localhost:5173/logbook";
+const MAIN_PROFILE_URL = "/studentdashboard";
+const MAIN_LOGS_URL = "/logbook";
+const MAIN_PROJECTS_URL = "/logbook";
 
 function InternshipReport() {
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [metrics, setMetrics] = useState({
         totalLogs: 0,
         projects: 0,
@@ -50,37 +51,44 @@ function InternshipReport() {
 
     useEffect(() => {
         async function loadSummary() {
-            let backendStudent = {};
-            let backendCompany = {};
-            let backendCollege = {};
-            let backendLogs = [];
-            let backendProjects = [];
+            setLoading(true);
+            setError(null);
+            
+            let backendData = {
+                student: {},
+                company: {},
+                college: {},
+                logs: [],
+                projects: []
+            };
 
             try {
-                const [s, c, col, l, p] = await Promise.all([
-                    fetch(`${API_BASE}/api/student`).then((r) => r.json()),
-                    fetch(`${API_BASE}/api/company`).then((r) => r.json()),
-                    fetch(`${API_BASE}/api/college`).then((r) => r.json()),
-                    fetch(`${API_BASE}/api/logs`).then((r) => r.json()),
-                    fetch(`${API_BASE}/api/projects`).then((r) => r.json())
-                ]);
-                backendStudent = s;
-                backendCompany = c;
-                backendCollege = col;
-                backendLogs = l;
-                backendProjects = p;
+                // Fetch internship report data from the backend API
+                const reportResponse = await studentService.getInternshipReport();
+                
+                if (reportResponse) {
+                    backendData = {
+                        student: reportResponse.student || {},
+                        company: reportResponse.company || {},
+                        college: reportResponse.college || {},
+                        logs: reportResponse.logs || [],
+                        projects: reportResponse.projects || []
+                    };
+                }
             } catch (err) {
-                console.warn("Report backend not available, using empty defaults", err);
+                console.warn("Report backend not available, using local storage fallback", err);
+                setError("Could not load report data from server. Using local data.");
             }
 
-            const sData = fromLocal(LOCAL_KEYS.student, backendStudent);
-            const cData = fromLocal(LOCAL_KEYS.company, backendCompany);
-            const colData = fromLocal(LOCAL_KEYS.college, backendCollege);
+            // Merge with local storage data (if any)
+            const sData = fromLocal(LOCAL_KEYS.student, backendData.student);
+            const cData = fromLocal(LOCAL_KEYS.company, backendData.company);
+            const colData = fromLocal(LOCAL_KEYS.college, backendData.college);
             const localLogs = fromLocal(LOCAL_KEYS.logs, []);
             const localProjects = fromLocal(LOCAL_KEYS.projects, []);
 
-            const allLogs = [...backendLogs, ...localLogs];
-            const allProjects = [...backendProjects, ...localProjects];
+            const allLogs = [...backendData.logs, ...localLogs];
+            const allProjects = [...backendData.projects, ...localProjects];
 
             const techSet = new Set();
             allLogs.forEach((l) => {
@@ -106,9 +114,9 @@ function InternshipReport() {
                 daysActive: daySet.size
             });
 
-            setStudent(sData);
-            setCompany(cData);
-            setCollege(colData);
+            setStudent(Object.keys(sData).length > 0 ? sData : backendData.student);
+            setCompany(Object.keys(cData).length > 0 ? cData : backendData.company);
+            setCollege(Object.keys(colData).length > 0 ? colData : backendData.college);
             setLogs(allLogs);
             setProjects(allProjects);
 
@@ -117,6 +125,8 @@ function InternshipReport() {
                 figTechStackUrl: imgs.figTechStackUrl || "",
                 figCorporateUrl: imgs.figCorporateUrl || ""
             });
+
+            setLoading(false);
         }
 
         loadSummary();
@@ -134,21 +144,18 @@ function InternshipReport() {
 
     const previewReport = async () => {
         try {
-            const res = await fetch(`${API_BASE}/api/report/html`);
-            const html = await res.text();
-            setReportHtml(html);
+            const response = await studentService.getInternshipReportHtml();
+            setReportHtml(response.html || response);
         } catch {
-            alert("Failed to load report from backend.");
+            alert("Failed to load report preview. Please ensure you have completed your internship data.");
         }
     };
 
     const printReport = async () => {
         try {
-            const res = await fetch(`${API_BASE}/api/report/pdf`);
-            if (!res.ok) {
-                throw new Error(`PDF error ${res.status}`);
-            }
-            const blob = await res.blob();
+            const response = await studentService.getInternshipReportPdf();
+            // Handle blob response for PDF download
+            const blob = response instanceof Blob ? response : new Blob([response], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
@@ -164,15 +171,33 @@ function InternshipReport() {
     };
 
     const downloadHtml = async () => {
-        const res = await fetch(`${API_BASE}/api/report/html`);
-        const html = await res.text();
-        const blob = new Blob([html], { type: "text/html" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "Internship_Report.html";
-        a.click();
-        URL.revokeObjectURL(a.href);
+        try {
+            const response = await studentService.getInternshipReportHtml();
+            const html = response.html || response;
+            const blob = new Blob([html], { type: "text/html" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "Internship_Report.html";
+            a.click();
+            URL.revokeObjectURL(a.href);
+        } catch (err) {
+            console.error("Error downloading HTML:", err);
+            alert("Failed to generate HTML report. Please try again.");
+        }
     };
+
+    if (loading) {
+        return (
+            <div className="ir-page">
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="animate-pulse text-center">
+                        <div className="h-12 w-12 bg-gray-300 rounded-full mx-auto mb-4"></div>
+                        <div className="h-4 w-32 bg-gray-300 rounded mx-auto"></div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="ir-page">

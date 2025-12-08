@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ClockIcon, PlusIcon, TrashIcon, CheckCircleIcon } from '@heroicons/react/24/solid';
-import { getAvailability, saveAvailability } from './apiService';
+import mentorService from '../../services/mentorService';
 
 // Days of the week
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -34,7 +34,7 @@ export default function SetAvailability() {
         async function fetchAvailability() {
             setLoading(true);
             try {
-                const data = await getAvailability();
+                const data = await mentorService.getAvailability();
                 setAvailability(data);
             } catch (error) {
                 console.error('Error fetching availability:', error);
@@ -63,7 +63,7 @@ export default function SetAvailability() {
 
         // Save to backend
         try {
-            await saveAvailability(updatedAvailability);
+            await mentorService.saveAvailability(updatedAvailability);
             // Show success message
             setShowSuccessMessage(true);
             setTimeout(() => setShowSuccessMessage(false), 3000);
@@ -83,7 +83,7 @@ export default function SetAvailability() {
 
         // Save to backend
         try {
-            await saveAvailability(updatedAvailability);
+            await mentorService.saveAvailability(updatedAvailability);
         } catch (error) {
             console.error('Error saving availability:', error);
         }

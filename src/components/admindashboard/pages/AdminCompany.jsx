@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   MapPinIcon, 
   CurrencyRupeeIcon, 
@@ -16,8 +16,10 @@ import {
   EllipsisVerticalIcon,
   ArrowRightOnRectangleIcon,
   Bars3Icon,
-  BellIcon
+  BellIcon,
+  ArrowPathIcon
 } from "@heroicons/react/24/outline";
+import adminService from "../../../services/adminService";
 
 const AdminCompanyPanel = () => {
   // --- STATE ---
@@ -26,22 +28,139 @@ const AdminCompanyPanel = () => {
   const [showSendModal, setShowSendModal] = useState(false);
   const [selectedCompanies, setSelectedCompanies] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // --- MOCK DATA ---
-  const companies = [
-    { id: 1, name: 'Tech Innovations Pvt Ltd', status: 'Active', openings: 5, students: 12, avgPackage: '8.5L', location: 'Mumbai', lastActive: '2 days ago' },
-    { id: 2, name: 'Digital Solutions Inc', status: 'Active', openings: 3, students: 8, avgPackage: '7.2L', location: 'Bangalore', lastActive: '1 week ago' },
-    { id: 3, name: 'CloudTech Systems', status: 'Pending', openings: 2, students: 0, avgPackage: '9.0L', location: 'Pune', lastActive: '3 days ago' },
-    { id: 4, name: 'AI Robotics Corp', status: 'Active', openings: 4, students: 15, avgPackage: '12.5L', location: 'Hyderabad', lastActive: '5 days ago' },
-    { id: 5, name: 'FinTech Solutions', status: 'Inactive', openings: 0, students: 3, avgPackage: '6.8L', location: 'Delhi', lastActive: '2 months ago' },
-    { id: 6, name: 'Green Energy Ltd', status: 'Active', openings: 6, students: 4, avgPackage: '7.5L', location: 'Chennai', lastActive: '1 day ago' },
-  ];
+  // --- DATA STATE ---
+  const [companies, setCompanies] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [stats, setStats] = useState({
+    totalCompanies: 0,
+    activeOpenings: 0,
+    studentsPlaced: 0,
+    avgPackage: '0L'
+  });
 
-  const notifications = [
-    { id: 1, type: 'Application', message: '8 new applications from students', time: '2 hours ago' },
-    { id: 2, type: 'Opening', message: 'Tech Innovations posted 2 new openings', time: '5 hours ago' },
-    { id: 3, type: 'Partnership', message: 'New company registration pending approval', time: '1 day ago' },
-  ];
+  // Fetch data on mount
+  useEffect(() => {
+    fetchCompaniesData();
+  }, []);
+
+  const fetchCompaniesData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await adminService.getCompanies({ limit: 100 });
+      
+      // Transform backend data to match frontend expectations
+      const transformedCompanies = (response.companies || []).map(company => ({
+        id: company.id,
+        name: company.companyName || company.name || 'Unknown Company',
+        status: company.isVerified ? 'Active' : 'Pending',
+        openings: company.internshipsCount || 0,
+        students: company.studentsHired || 0,
+        avgPackage: company.avgPackage || 'N/A',
+        location: company.location || 'Not specified',
+        lastActive: company.lastActive || getTimeAgo(company.createdAt)
+      }));
+
+      setCompanies(transformedCompanies);
+      
+      // Calculate stats
+      setStats({
+        totalCompanies: transformedCompanies.length,
+        activeOpenings: transformedCompanies.reduce((sum, c) => sum + (c.openings || 0), 0),
+        studentsPlaced: transformedCompanies.reduce((sum, c) => sum + (c.students || 0), 0),
+        avgPackage: calculateAvgPackage(transformedCompanies)
+      });
+
+      // Set mock notifications (can be enhanced with actual API)
+      setNotifications([
+        { id: 1, type: 'Application', message: 'New applications received', time: '2 hours ago' },
+        { id: 2, type: 'Opening', message: 'New job openings posted', time: '5 hours ago' },
+        { id: 3, type: 'Partnership', message: 'New company registration pending', time: '1 day ago' },
+      ]);
+
+    } catch (err) {
+      console.error('Error fetching companies:', err);
+      setError(err.message || 'Failed to fetch company data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTimeAgo = (dateString) => {
+    if (!dateString) return 'Recently';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return '1 day ago';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    return `${Math.floor(diffDays / 30)} months ago`;
+  };
+
+  const calculateAvgPackage = (companies) => {
+    const validPackages = companies.filter(c => c.avgPackage && c.avgPackage !== 'N/A');
+    if (validPackages.length === 0) return 'N/A';
+    // Return a placeholder - actual calculation would depend on data format
+    return '₹8.2L';
+  };
+
+  const handleVerifyCompany = async (companyId, isVerified) => {
+    try {
+      await adminService.verifyCompany(companyId, isVerified);
+      // Update local state
+      setCompanies(prev => prev.map(c => 
+        c.id === companyId ? { ...c, status: isVerified ? 'Active' : 'Pending' } : c
+      ));
+    } catch (err) {
+      console.error('Error verifying company:', err);
+      setError(err.message || 'Failed to verify company');
+    }
+  };
+
+  const handleDeleteCompany = async (companyId) => {
+    if (!window.confirm('Are you sure you want to delete this company?')) return;
+    
+    try {
+      await adminService.deleteCompany(companyId);
+      setCompanies(prev => prev.filter(c => c.id !== companyId));
+    } catch (err) {
+      console.error('Error deleting company:', err);
+      setError(err.message || 'Failed to delete company');
+    }
+  };
+
+  const handleOpenPortal = async () => {
+    try {
+      for (const companyId of selectedCompanies) {
+        await adminService.openCompanyPortal(companyId);
+      }
+      alert(`Portals opened for ${selectedCompanies.length} companies`);
+      setShowOpenModal(false);
+      setSelectedCompanies([]);
+      fetchCompaniesData(); // Refresh data
+    } catch (err) {
+      console.error('Error opening portals:', err);
+      setError(err.message || 'Failed to open portals');
+    }
+  };
+
+  const handleSendMessage = async (messageData) => {
+    try {
+      for (const companyId of selectedCompanies) {
+        await adminService.sendMessageToCompany(companyId, messageData);
+      }
+      alert(`Message sent to ${selectedCompanies.length} companies`);
+      setShowSendModal(false);
+      setSelectedCompanies([]);
+    } catch (err) {
+      console.error('Error sending message:', err);
+      setError(err.message || 'Failed to send message');
+    }
+  };
 
   // --- HANDLERS ---
   const toggleCompanySelection = (id) => {
@@ -189,7 +308,7 @@ const AdminCompanyPanel = () => {
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-500">Total Companies</p>
-                      <p className="text-3xl font-bold text-gray-900 mt-2">{companies.length}</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalCompanies}</p>
                     </div>
                     <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
                       <BuildingOffice2Icon className="w-6 h-6" />
@@ -204,7 +323,7 @@ const AdminCompanyPanel = () => {
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-500">Active Openings</p>
-                      <p className="text-3xl font-bold text-gray-900 mt-2">28</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-2">{stats.activeOpenings}</p>
                     </div>
                     <div className="p-2 bg-green-50 text-green-600 rounded-lg">
                       <FolderOpenIcon className="w-6 h-6" />
@@ -219,7 +338,7 @@ const AdminCompanyPanel = () => {
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-500">Students Placed</p>
-                      <p className="text-3xl font-bold text-gray-900 mt-2">156</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-2">{stats.studentsPlaced}</p>
                     </div>
                     <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
                       <UsersIcon className="w-6 h-6" />
@@ -234,7 +353,7 @@ const AdminCompanyPanel = () => {
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-500">Avg Package</p>
-                      <p className="text-3xl font-bold text-gray-900 mt-2">₹8.2L</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-2">{stats.avgPackage}</p>
                     </div>
                     <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
                       <CurrencyRupeeIcon className="w-6 h-6" />
@@ -463,9 +582,7 @@ const AdminCompanyPanel = () => {
                 <button 
                   className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => {
-                    alert(`Opening portals for ${selectedCompanies.length} companies`);
-                    setShowOpenModal(false);
-                    setSelectedCompanies([]);
+                    handleOpenPortal();
                   }}
                   disabled={selectedCompanies.length === 0}
                 >
@@ -569,9 +686,7 @@ const AdminCompanyPanel = () => {
                   className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                   disabled={selectedCompanies.length === 0}
                   onClick={() => {
-                    alert(`Sending message to ${selectedCompanies.length} companies`);
-                    setShowSendModal(false);
-                    setSelectedCompanies([]);
+                    handleSendMessage({ type: 'Announcement', priority: 'Normal', subject: '', content: '' });
                   }}
                 >
                   <PaperAirplaneIcon className="w-5 h-5" />

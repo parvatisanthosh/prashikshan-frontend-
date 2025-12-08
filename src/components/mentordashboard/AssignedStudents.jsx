@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserGroupIcon, MagnifyingGlassIcon, ChatBubbleLeftRightIcon, ChartBarIcon, EnvelopeIcon } from '@heroicons/react/24/solid';
-import { getAssignedStudents } from './apiService';
+import mentorService from '../../services/mentorService';
 
 // This component will fetch data from API and fallback to mock data if unavailable
 export default function AssignedStudents() {
@@ -13,7 +13,7 @@ export default function AssignedStudents() {
         async function fetchStudents() {
             setLoading(true);
             try {
-                const data = await getAssignedStudents(true);
+                const data = await mentorService.getAssignedStudents();
                 setStudents(data);
             } catch (error) {
                 console.error('Error fetching students:', error);

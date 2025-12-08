@@ -3,65 +3,13 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import Navbar from "../components/studentdashboard/Navbar.jsx";
 import Sidebar from "../components/studentdashboard/sidebar.jsx";
 import Footer from "../components/studentdashboard/Footer.jsx";
+import studentService from "../services/studentService";
+
 /**
  * LogbookPage.jsx
  * - Layout: 3-Column (Left: Stats/Tags | Center: Log Feed | Right: Todos/Activity)
- * - Features: Offline-first architecture with Mock API seeding.
+ * - Features: API-based data fetching with studentService.
  */
-
-const USE_MOCK = true;
-
-/* -------------------- MOCK DATA (Backend Schema) -------------------- */
-const MOCK_API_RESPONSE = {
-  user: {
-    name: "Divyam Gupta",
-    roll: "CS2026-101",
-    // ...other profile data
-  },
-  stats: {
-    totalLogs: 42,
-    totalHours: 128.5,
-    currentStreak: 5,
-    mostActiveDay: "Wednesday"
-  },
-  logs: [
-    {
-      id: "l1",
-      title: "Researched Microservices Architecture",
-      body: "Spent the day reading about Event-Driven Architecture. Looked into Kafka vs RabbitMQ. Decided to go with RabbitMQ for the capstone project due to simpler setup for our needs.\n\n- Read docs\n- Set up local docker container",
-      tags: ["Capstone", "Research", "Backend"],
-      project: "Capstone Project",
-      hours: 4.5,
-      createdAt: new Date(Date.now() - 86400000 * 0).toISOString(), // Today
-      status: "published", // draft | published
-    },
-    {
-      id: "l2",
-      title: "Fixed Authentication Bug",
-      body: "JWT tokens were not expiring correctly on the client side. Added an interceptor in Axios to check for 401 errors and trigger a refresh token flow.",
-      tags: ["Bugfix", "React", "Auth"],
-      project: "Internship Task",
-      hours: 2.0,
-      createdAt: new Date(Date.now() - 86400000 * 2).toISOString(), // 2 days ago
-      status: "published",
-    },
-    {
-      id: "l3",
-      title: "Meeting with Mentor",
-      body: "Discussed the database schema for the new module. Received feedback on normalization forms. Need to refactor the 'Users' table.",
-      tags: ["Meeting", "Mentorship"],
-      project: "General",
-      hours: 1.0,
-      createdAt: new Date(Date.now() - 86400000 * 5).toISOString(), // 5 days ago
-      status: "published",
-    },
-  ],
-  todos: [
-    { id: "t1", text: "Submit Internship Report", completed: false },
-    { id: "t2", text: "Email Professor regarding Lab", completed: true },
-    { id: "t3", text: "Update Resume", completed: false },
-  ]
-};
 
 /* -------------------- Utilities -------------------- */
 const formatDate = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -75,11 +23,11 @@ export default function LogbookPage() {
     window.location.hash = `#/${route}`;
   }
 
-
   // --- Data State ---
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState({ totalLogs: 0, totalHours: 0, currentStreak: 0 });
   const [logs, setLogs] = useState([]);
   const [todos, setTodos] = useState([]);
 
@@ -93,37 +41,58 @@ export default function LogbookPage() {
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
+      setError(null);
       try {
-        if (USE_MOCK) {
-          await new Promise(resolve => setTimeout(resolve, 600)); // Simulate network
-          
-          // Hybrid approach: Load from local storage if available, else seed with mock
-          const localLogs = localStorage.getItem("logbook_logs");
-          const localTodos = localStorage.getItem("logbook_todos");
+        // Fetch logbook entries and goals from API
+        const [entriesResponse, goalsResponse, profileResponse] = await Promise.all([
+          studentService.getLogbookEntries(),
+          studentService.getLogbookGoals(),
+          studentService.getProfile()
+        ]);
 
-          setUser(MOCK_API_RESPONSE.user);
-          setStats(MOCK_API_RESPONSE.stats);
-          setLogs(localLogs ? JSON.parse(localLogs) : MOCK_API_RESPONSE.logs);
-          setTodos(localTodos ? JSON.parse(localTodos) : MOCK_API_RESPONSE.todos);
-        }
+        const entries = entriesResponse.entries || [];
+        const goals = goalsResponse.goals || [];
+        const profile = profileResponse.profile || {};
+
+        // Transform entries to logs format
+        const transformedLogs = entries.map(entry => ({
+          id: entry.id,
+          title: entry.title,
+          body: entry.content,
+          tags: entry.tags || [],
+          project: entry.mood || "General",
+          hours: 1, // Default hours
+          createdAt: entry.date,
+          status: "published"
+        }));
+
+        // Transform goals to todos format
+        const transformedTodos = goals.map(goal => ({
+          id: goal.id,
+          text: goal.text,
+          completed: goal.completed
+        }));
+
+        // Calculate stats
+        const totalHours = transformedLogs.reduce((sum, log) => sum + (log.hours || 0), 0);
+        
+        setUser({ name: profile.displayName || "Student", roll: profile.enrollmentNumber || "" });
+        setStats({ 
+          totalLogs: transformedLogs.length, 
+          totalHours, 
+          currentStreak: 5 // TODO: Calculate from backend
+        });
+        setLogs(transformedLogs);
+        setTodos(transformedTodos);
       } catch (e) {
         console.error("Fetch error", e);
+        setError(e.message || "Failed to load logbook data");
       } finally {
         setLoading(false);
       }
     }
     fetchData();
   }, []);
-
-  // --- Persistence Effects ---
-  useEffect(() => {
-    if (!loading) localStorage.setItem("logbook_logs", JSON.stringify(logs));
-  }, [logs, loading]);
-
-  useEffect(() => {
-    if (!loading) localStorage.setItem("logbook_todos", JSON.stringify(todos));
-  }, [todos, loading]);
-
 
   // --- Logic Helpers ---
   const filteredLogs = useMemo(() => {
@@ -148,38 +117,89 @@ export default function LogbookPage() {
   }, [logs]);
 
   // Actions
-  const handleSaveLog = (logData) => {
-    if (editingLog) {
-      setLogs(prev => prev.map(l => l.id === editingLog.id ? { ...l, ...logData } : l));
-    } else {
-      const newLog = {
-        id: `new_${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        status: "published",
-        ...logData
-      };
-      setLogs(prev => [newLog, ...prev]);
+  const handleSaveLog = async (logData) => {
+    try {
+      if (editingLog) {
+        // Update existing entry
+        await studentService.updateLogbookEntry(editingLog.id, {
+          title: logData.title,
+          content: logData.body,
+          tags: logData.tags,
+          date: new Date().toISOString()
+        });
+        setLogs(prev => prev.map(l => l.id === editingLog.id ? { ...l, ...logData } : l));
+      } else {
+        // Create new entry
+        const response = await studentService.createLogbookEntry({
+          title: logData.title,
+          content: logData.body,
+          tags: logData.tags,
+          date: new Date().toISOString(),
+          mood: logData.project || "neutral"
+        });
+        const newLog = {
+          id: response.entry?.id || `new_${Date.now()}`,
+          createdAt: new Date().toISOString(),
+          status: "published",
+          ...logData
+        };
+        setLogs(prev => [newLog, ...prev]);
+      }
+      setIsModalOpen(false);
+      setEditingLog(null);
+    } catch (err) {
+      console.error("Error saving log:", err);
+      alert(err.message || "Failed to save log entry");
     }
-    setIsModalOpen(false);
-    setEditingLog(null);
   };
 
-  const handleDeleteLog = (id) => {
+  const handleDeleteLog = async (id) => {
     if(confirm("Delete this log?")) {
-      setLogs(prev => prev.filter(l => l.id !== id));
+      try {
+        await studentService.deleteLogbookEntry(id);
+        setLogs(prev => prev.filter(l => l.id !== id));
+      } catch (err) {
+        console.error("Error deleting log:", err);
+        alert(err.message || "Failed to delete log entry");
+      }
     }
   };
 
-  const handleToggleTodo = (id) => {
-    setTodos(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+  const handleToggleTodo = async (id) => {
+    try {
+      const todo = todos.find(t => t.id === id);
+      await studentService.updateLogbookGoal(id, { completed: !todo.completed });
+      setTodos(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+    } catch (err) {
+      console.error("Error toggling todo:", err);
+      // Still update UI for better UX
+      setTodos(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+    }
   };
 
-  const handleAddTodo = (text) => {
-    setTodos(prev => [{ id: `t_${Date.now()}`, text, completed: false }, ...prev]);
+  const handleAddTodo = async (text) => {
+    try {
+      const response = await studentService.createLogbookGoal({ text });
+      const newTodo = { 
+        id: response.goal?.id || `t_${Date.now()}`, 
+        text, 
+        completed: false 
+      };
+      setTodos(prev => [newTodo, ...prev]);
+    } catch (err) {
+      console.error("Error adding todo:", err);
+      alert(err.message || "Failed to add goal");
+    }
   };
 
-  const handleDeleteTodo = (id) => {
-    setTodos(prev => prev.filter(t => t.id !== id));
+  const handleDeleteTodo = async (id) => {
+    try {
+      await studentService.deleteLogbookGoal(id);
+      setTodos(prev => prev.filter(t => t.id !== id));
+    } catch (err) {
+      console.error("Error deleting todo:", err);
+      alert(err.message || "Failed to delete goal");
+    }
   };
 
   if (loading) {

@@ -20,9 +20,10 @@ import {
   MapPinIcon,
   UserIcon,
   DocumentArrowUpIcon,
-  BanknotesIcon, // Added missing import
+  BanknotesIcon,
 } from "@heroicons/react/24/solid";
 import { InformationCircleIcon, SparklesIcon } from "@heroicons/react/24/outline";
+import adminService from "../../../services/adminService";
 
 export default function PartnershipsUI() {
   // State Management
@@ -97,120 +98,34 @@ export default function PartnershipsUI() {
   const fetchPartnerships = async () => {
     setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const response = await adminService.getPartnerships({ limit: 100 });
 
-      // Mock Data
-      const mockPartnerships = [
-        {
-          id: "PT001",
-          companyName: "Tech Corp India",
-          logo: "🏢",
-          type: "placement",
-          status: "active",
-          startDate: "2024-01-15",
-          endDate: "2026-01-15",
-          contactPerson: "Rajesh Kumar",
-          contactEmail: "rajesh@techcorp.com",
-          contactPhone: "+91 98765 43210",
-          address: "Bangalore, Karnataka",
-          website: "https://techcorp.com",
-          description: "Leading technology company specializing in software development and IT services.",
-          benefits: "Campus placements, internships, training programs",
-          studentsPlaced: 45,
-          averagePackage: "8 LPA",
-          mouDocument: "mou_techcorp_2024.pdf",
-          createdAt: "2024-01-10",
-          lastUpdated: "2024-11-20",
-        },
-        {
-          id: "PT002",
-          companyName: "Innovation Labs",
-          logo: "💡",
-          type: "internship",
-          status: "active",
-          startDate: "2024-03-01",
-          endDate: "2025-12-31",
-          contactPerson: "Priya Sharma",
-          contactEmail: "priya@innovationlabs.in",
-          contactPhone: "+91 98765 43211",
-          address: "Mumbai, Maharashtra",
-          website: "https://innovationlabs.in",
-          description: "Innovation-driven company focused on AI and machine learning solutions.",
-          benefits: "Summer internships, research collaboration, stipend programs",
-          studentsPlaced: 28,
-          averagePackage: "6 LPA",
-          mouDocument: "mou_innovation_2024.pdf",
-          createdAt: "2024-02-20",
-          lastUpdated: "2024-10-15",
-        },
-        {
-          id: "PT003",
-          companyName: "Global Solutions Pvt Ltd",
-          logo: "🌐",
-          type: "training",
-          status: "active",
-          startDate: "2024-06-01",
-          endDate: "2026-05-31",
-          contactPerson: "Amit Patel",
-          contactEmail: "amit@globalsolutions.com",
-          contactPhone: "+91 98765 43212",
-          address: "Pune, Maharashtra",
-          website: "https://globalsolutions.com",
-          description: "Global consulting firm providing enterprise solutions and training.",
-          benefits: "Faculty training, student workshops, certification programs",
-          studentsPlaced: 0,
-          averagePackage: "N/A",
-          mouDocument: "mou_global_2024.pdf",
-          createdAt: "2024-05-15",
-          lastUpdated: "2024-09-10",
-        },
-        {
-          id: "PT004",
-          companyName: "StartUp Hub Inc",
-          logo: "🚀",
-          type: "placement",
-          status: "pending",
-          startDate: "2025-01-01",
-          endDate: "2027-01-01",
-          contactPerson: "Neha Gupta",
-          contactEmail: "neha@startuphub.co",
-          contactPhone: "+91 98765 43213",
-          address: "Hyderabad, Telangana",
-          website: "https://startuphub.co",
-          description: "Innovative startup incubator and accelerator program.",
-          benefits: "Entrepreneurship programs, mentorship, seed funding guidance",
-          studentsPlaced: 0,
-          averagePackage: "7 LPA",
-          mouDocument: "mou_startup_pending.pdf",
-          createdAt: "2024-11-01",
-          lastUpdated: "2024-12-01",
-        },
-        {
-          id: "PT005",
-          companyName: "DataTech Analytics",
-          logo: "📊",
-          type: "research",
-          status: "expired",
-          startDate: "2022-01-01",
-          endDate: "2024-12-31",
-          contactPerson: "Suresh Reddy",
-          contactEmail: "suresh@datatech.com",
-          contactPhone: "+91 98765 43214",
-          address: "Chennai, Tamil Nadu",
-          website: "https://datatech.com",
-          description: "Data analytics and business intelligence company.",
-          benefits: "Research collaboration, data science projects, publications",
-          studentsPlaced: 32,
-          averagePackage: "9 LPA",
-          mouDocument: "mou_datatech_2022.pdf",
-          createdAt: "2021-12-15",
-          lastUpdated: "2024-12-01",
-        },
-      ];
+      // Transform backend data to match frontend expectations
+      const transformedPartnerships = (response.partnerships || []).map(partnership => ({
+        id: partnership.id,
+        companyName: partnership.companyName || partnership.name || 'Unknown',
+        logo: partnership.logo || "🏢",
+        type: partnership.type || "placement",
+        status: partnership.status || "active",
+        startDate: partnership.startDate || "",
+        endDate: partnership.endDate || "",
+        contactPerson: partnership.contactPerson || "",
+        contactEmail: partnership.contactEmail || "",
+        contactPhone: partnership.contactPhone || "",
+        address: partnership.address || "",
+        website: partnership.website || "",
+        description: partnership.description || "",
+        benefits: partnership.benefits || "",
+        studentsPlaced: partnership.studentsPlaced || 0,
+        averagePackage: partnership.averagePackage || "N/A",
+        mouDocument: partnership.mouDocument || "",
+        createdAt: partnership.createdAt || "",
+        lastUpdated: partnership.lastUpdated || partnership.updatedAt || ""
+      }));
 
-      setAllPartnerships(mockPartnerships); // Set Master List
-      setPartnerships(mockPartnerships);    // Set View List
-      calculateStats(mockPartnerships);
+      setAllPartnerships(transformedPartnerships);
+      setPartnerships(transformedPartnerships);
+      calculateStats(transformedPartnerships);
       
     } catch (error) {
       console.error("Error fetching partnerships:", error);
@@ -251,29 +166,20 @@ export default function PartnershipsUI() {
     setSubmitting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Call backend API to create partnership
+      const response = await adminService.createPartnership(formData);
 
-      // Create new object
-      const newPartnership = {
-        ...formData,
-        id: "PT" + Date.now(),
-        logo: "🏢", // Default logo for new entries
-        studentsPlaced: 0,
-        averagePackage: "N/A",
-        createdAt: new Date().toISOString(),
-        lastUpdated: new Date().toISOString(),
-      };
-
-      // Update State
-      const updatedList = [newPartnership, ...allPartnerships];
-      setAllPartnerships(updatedList);
-      
-      alert("Partnership added successfully!");
-      setShowAddModal(false);
-      resetForm();
+      if (response.success) {
+        // Refresh the list
+        await fetchPartnerships();
+        
+        alert("Partnership added successfully!");
+        setShowAddModal(false);
+        resetForm();
+      }
     } catch (error) {
       console.error("Error adding partnership:", error);
-      alert("Failed to add partnership. Please try again.");
+      alert(error.message || "Failed to add partnership. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -284,20 +190,19 @@ export default function PartnershipsUI() {
     setSubmitting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Call backend API to update partnership
+      const response = await adminService.updatePartnership(selectedPartnership.id, formData);
 
-      // Update object in list
-      const updatedList = allPartnerships.map((p) => 
-        p.id === selectedPartnership.id ? { ...p, ...formData, lastUpdated: new Date().toISOString() } : p
-      );
-
-      setAllPartnerships(updatedList);
-      
-      alert("Partnership updated successfully!");
-      setShowEditModal(false);
+      if (response.success) {
+        // Refresh the list
+        await fetchPartnerships();
+        
+        alert("Partnership updated successfully!");
+        setShowEditModal(false);
+      }
     } catch (error) {
       console.error("Error updating partnership:", error);
-      alert("Failed to update partnership. Please try again.");
+      alert(error.message || "Failed to update partnership. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -309,7 +214,7 @@ export default function PartnershipsUI() {
     }
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      await adminService.deletePartnership(id);
       
       // Remove from list
       const updatedList = allPartnerships.filter((p) => p.id !== id);
@@ -318,7 +223,7 @@ export default function PartnershipsUI() {
       alert("Partnership deleted successfully!");
     } catch (error) {
       console.error("Error deleting partnership:", error);
-      alert("Failed to delete partnership. Please try again.");
+      alert(error.message || "Failed to delete partnership. Please try again.");
     }
   };
 

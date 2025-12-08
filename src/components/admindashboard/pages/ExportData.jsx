@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Download, FileText, FileSpreadsheet, Calendar, Filter, Users, Building2, Briefcase, Award, Database, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import adminService from "../../../services/adminService";
 
 const ExportDataPage = () => {
   const [selectedDataType, setSelectedDataType] = useState('');
@@ -14,6 +15,7 @@ const ExportDataPage = () => {
   });
   const [exportHistory, setExportHistory] = useState([]);
   const [isExporting, setIsExporting] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Data export options - will fetch from backend
   const dataTypes = [
@@ -67,41 +69,32 @@ const ExportDataPage = () => {
     { id: 'pdf', name: 'PDF (.pdf)', icon: FileText, description: 'For reports and presentations' }
   ];
 
-  // Simulated export history - will fetch from backend
-  const recentExports = [
-    {
-      id: 1,
-      type: 'Student Data',
-      format: 'Excel',
-      date: '2024-12-06 14:30',
-      records: 180,
-      status: 'completed'
-    },
-    {
-      id: 2,
-      type: 'Placement Records',
-      format: 'PDF',
-      date: '2024-12-05 10:15',
-      records: 156,
-      status: 'completed'
-    },
-    {
-      id: 3,
-      type: 'Company Data',
-      format: 'CSV',
-      date: '2024-12-04 16:45',
-      records: 45,
-      status: 'completed'
-    },
-    {
-      id: 4,
-      type: 'Analytics Report',
-      format: 'PDF',
-      date: '2024-12-03 09:20',
-      records: 1,
-      status: 'completed'
+  // Fetch export history on mount
+  useEffect(() => {
+    fetchExportHistory();
+  }, []);
+
+  const fetchExportHistory = async () => {
+    setLoading(true);
+    try {
+      const response = await adminService.getExportHistory({ limit: 10 });
+      const history = (response.exports || []).map(exp => ({
+        id: exp.id,
+        type: exp.type || exp.dataType || 'Unknown',
+        format: exp.format || 'CSV',
+        date: exp.createdAt ? new Date(exp.createdAt).toLocaleString() : 'Unknown',
+        records: exp.recordsCount || 0,
+        status: exp.status || 'completed'
+      }));
+      setExportHistory(history);
+    } catch (error) {
+      console.error('Error fetching export history:', error);
+      // Set default empty history on error
+      setExportHistory([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const handleExport = async () => {
     if (!selectedDataType || !selectedFormat) {
@@ -111,47 +104,38 @@ const ExportDataPage = () => {
 
     setIsExporting(true);
 
-    // TODO: Replace with actual API call
-    // Example:
-    // const response = await fetch('/api/export', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     dataType: selectedDataType,
-    //     format: selectedFormat,
-    //     dateRange,
-    //     customStartDate,
-    //     customEndDate,
-    //     filters: selectedFilters
-    //   })
-    // });
-    // const blob = await response.blob();
-    // const url = window.URL.createObjectURL(blob);
-    // const a = document.createElement('a');
-    // a.href = url;
-    // a.download = `${selectedDataType}_${Date.now()}.${selectedFormat}`;
-    // a.click();
-
-    // Simulate export delay
-    setTimeout(() => {
-      setIsExporting(false);
-      alert(`Export initiated! ${selectedDataType} will be downloaded as ${selectedFormat.toUpperCase()}`);
-      
-      // Add to history
-      const newExport = {
-        id: exportHistory.length + 1,
-        type: dataTypes.find(dt => dt.id === selectedDataType)?.name,
-        format: exportFormats.find(ef => ef.id === selectedFormat)?.name.split(' ')[0],
-        date: new Date().toLocaleString(),
-        records: Math.floor(Math.random() * 200) + 50,
-        status: 'completed'
+    try {
+      // Call backend API to export data
+      const params = {
+        format: selectedFormat,
+        startDate: dateRange === 'custom' ? customStartDate : undefined,
+        endDate: dateRange === 'custom' ? customEndDate : undefined,
+        ...selectedFilters
       };
-      setExportHistory([newExport, ...exportHistory]);
-      
-      // Reset form
-      setSelectedDataType('');
-      setSelectedFormat('');
-    }, 2000);
+
+      const response = await adminService.exportData(selectedDataType, params);
+
+      if (response.success) {
+        // If CSV/Excel, download the file
+        if (response.data && (selectedFormat === 'csv' || selectedFormat === 'excel')) {
+          adminService.downloadExportFile(response.data, response.filename);
+        }
+        
+        alert(`Export completed! ${selectedDataType} has been downloaded as ${selectedFormat.toUpperCase()}`);
+        
+        // Refresh export history
+        await fetchExportHistory();
+        
+        // Reset form
+        setSelectedDataType('');
+        setSelectedFormat('');
+      }
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      alert(error.message || 'Failed to export data. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (

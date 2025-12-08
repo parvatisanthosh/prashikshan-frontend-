@@ -1,34 +1,24 @@
 import React, { useState } from "react";
 import ClassForm from "./ClassForm.jsx";
 import { ArrowLeftIcon } from "@heroicons/react/24/solid";
+import facultyService from "../../../services/Facultyservice";
 
 export default function CreateClass({ onBack, onClassCreated }) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSubmit = (formData) => {
+  const handleSubmit = async (formData) => {
     setLoading(true);
+    setError(null);
 
-    setTimeout(() => {
-      const newClass = {
-        id: "CLS" + Math.floor(Math.random() * 9000),
-        className: formData.className,
-        classCode: formData.classCode,
-        department: formData.department,
-        section: formData.section,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        description: formData.description,
-        maxStudents: formData.maxStudents,
-
-        // IMPORTANT defaults
-        studentCount: 0,
-        logsPending: 0,
-        status: "Active",
-      };
-
+    try {
+      const newClass = await facultyService.createClass(formData);
       onClassCreated(newClass);
+    } catch (err) {
+      console.error("Error creating class:", err);
+      setError(err.message || "Failed to create class");
       setLoading(false);
-    }, 800);
+    }
   };
 
   return (
@@ -41,6 +31,12 @@ export default function CreateClass({ onBack, onClassCreated }) {
       </button>
 
       <div className="bg-white rounded-2xl shadow-xl p-8">
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
+            <p className="font-semibold">Error</p>
+            <p className="text-sm mt-1">{error}</p>
+          </div>
+        )}
         <ClassForm onSubmit={handleSubmit} loading={loading} />
       </div>
     </div>

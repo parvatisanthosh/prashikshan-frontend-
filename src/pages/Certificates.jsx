@@ -3,75 +3,13 @@ import React, { useEffect, useState, useMemo } from "react";
 import Navbar from "../components/studentdashboard/Navbar.jsx";
 import Sidebar from "../components/studentdashboard/sidebar.jsx";
 import Footer from "../components/studentdashboard/Footer.jsx";
-
-
+import studentService from "../services/studentService";
 
 /**
  * CertificatesPage.jsx
  * - Layout: 3-Column (Left: Filters | Center: Grid | Right: Skills & Share)
  * - Features: Credential Wallet, Skill Aggregation, Verification Badges.
  */
-
-const USE_MOCK = true;
-
-/* -------------------- MOCK DATA -------------------- */
-const MOCK_API_RESPONSE = {
-  user: {
-    name: "Divyam Gupta",
-    roll: "CS2026-101",
-    department: "Computer Science",
-  },
-  certificates: [
-    {
-      id: "c1",
-      title: "Fullstack Web Development",
-      issuer: "DevAcademy",
-      issueDate: "2024-08-15",
-      skills: ["React", "Node.js", "MongoDB"],
-      credentialId: "DA-2024-8892",
-      verified: true,
-      url: "https://file-examples.com/wp-content/uploads/2017/10/file-sample_150kB.pdf",
-      previewImage: "https://images.unsplash.com/photo-1589330694653-46d2010a670b?w=500&auto=format&fit=crop&q=60",
-      type: "Course"
-    },
-    {
-      id: "c2",
-      title: "Data Science Fundamentals",
-      issuer: "OpenLearn",
-      issueDate: "2024-05-20",
-      skills: ["Python", "Pandas", "Data Analysis"],
-      credentialId: "OL-DS-551",
-      verified: true,
-      url: "#",
-      previewImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&auto=format&fit=crop&q=60",
-      type: "Course"
-    },
-    {
-      id: "c3",
-      title: "Hackathon Winner 2023",
-      issuer: "TechFest India",
-      issueDate: "2023-11-10",
-      skills: ["Innovation", "Teamwork"],
-      credentialId: "TF-WIN-01",
-      verified: false, // Self uploaded
-      url: "#",
-      previewImage: null, // No image, use fallback
-      type: "Award"
-    },
-    {
-      id: "c4",
-      title: "AWS Cloud Practitioner",
-      issuer: "Amazon Web Services",
-      issueDate: "2024-01-05",
-      skills: ["Cloud Computing", "AWS", "DevOps"],
-      credentialId: "AWS-CP-9912",
-      verified: true,
-      url: "#",
-      previewImage: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500&auto=format&fit=crop&q=60",
-      type: "Certification"
-    }
-  ]
-};
 
 /* -------------------- Main Component -------------------- */
 export default function CertificatesPage() {
@@ -83,6 +21,7 @@ export default function CertificatesPage() {
 
   // --- State ---
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
   const [certs, setCerts] = useState([]);
   
@@ -96,24 +35,83 @@ export default function CertificatesPage() {
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
+      setError(null);
       try {
-        if (USE_MOCK) {
-          await new Promise(r => setTimeout(r, 800)); // Simulate network
-          setUser(MOCK_API_RESPONSE.user);
-          setCerts(MOCK_API_RESPONSE.certificates);
-        } else {
-          // TODO: Fetch from backend API
-          // const res = await fetch('/api/student/certificates');
-          // const data = await res.json();
-        }
+        // Fetch certificates and profile from API
+        const [certsResponse, profileResponse] = await Promise.all([
+          studentService.getCertificates(),
+          studentService.getProfile()
+        ]);
+
+        const certificates = certsResponse.certificates || [];
+        const profile = profileResponse.profile || {};
+
+        // Transform backend data to our format
+        const transformedCerts = certificates.map(cert => ({
+          id: cert.id,
+          title: cert.title || cert.name,
+          issuer: cert.issuer || cert.issuingOrganization,
+          issueDate: cert.issueDate || cert.issuedAt,
+          skills: cert.skills || [],
+          credentialId: cert.credentialId || cert.certificateId,
+          verified: cert.verified || cert.isVerified || false,
+          url: cert.url || cert.fileUrl || "#",
+          previewImage: cert.previewImage || cert.imageUrl || null,
+          type: cert.type || cert.category || "Certification"
+        }));
+
+        setUser({
+          name: profile.displayName || "Student",
+          roll: profile.enrollmentNumber || "",
+          department: profile.department || ""
+        });
+        setCerts(transformedCerts);
       } catch (e) {
         console.error("Failed to fetch certificates", e);
+        setError(e.message || "Failed to load certificates");
       } finally {
         setLoading(false);
       }
     }
     fetchData();
   }, []);
+
+  // --- Handle Upload ---
+  const handleUploadCertificate = async (certData) => {
+    try {
+      const response = await studentService.uploadCertificate(certData);
+      const newCert = {
+        id: response.certificate?.id || `c_${Date.now()}`,
+        title: certData.title,
+        issuer: certData.issuer,
+        issueDate: certData.issueDate,
+        verified: false,
+        type: certData.type || "Certification",
+        previewImage: certData.previewImage || null,
+        url: response.certificate?.url || "#",
+        skills: certData.skills || []
+      };
+      setCerts(prev => [newCert, ...prev]);
+      setUploadModalOpen(false);
+    } catch (err) {
+      console.error("Error uploading certificate:", err);
+      alert(err.message || "Failed to upload certificate");
+    }
+  };
+
+  // --- Handle Delete ---
+  const handleDeleteCertificate = async (id) => {
+    if(confirm("Delete this certificate?")) {
+      try {
+        await studentService.deleteCertificate(id);
+        setCerts(prev => prev.filter(c => c.id !== id));
+        setSelectedCert(null);
+      } catch (err) {
+        console.error("Error deleting certificate:", err);
+        alert(err.message || "Failed to delete certificate");
+      }
+    }
+  };
 
   // --- Derived State ---
   const filteredCerts = useMemo(() => {
@@ -145,6 +143,17 @@ export default function CertificatesPage() {
           </div>
        </div>
        
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center">
+        <div className="text-center text-red-600">
+          <p className="text-lg font-semibold">Error loading certificates</p>
+          <p className="text-sm">{error}</p>
+        </div>
+      </div>
     );
   }
 
@@ -307,10 +316,7 @@ export default function CertificatesPage() {
       {uploadModalOpen && (
          <UploadCertificateModal 
             onClose={() => setUploadModalOpen(false)} 
-            onUpload={(newCert) => {
-               setCerts(prev => [newCert, ...prev]);
-               setUploadModalOpen(false);
-            }} 
+            onUpload={handleUploadCertificate} 
          />
       )}
 
@@ -318,12 +324,7 @@ export default function CertificatesPage() {
          <CertificateDetailModal 
             cert={selectedCert} 
             onClose={() => setSelectedCert(null)}
-            onDelete={(id) => {
-               if(confirm("Delete this certificate?")) {
-                  setCerts(prev => prev.filter(c => c.id !== id));
-                  setSelectedCert(null);
-               }
-            }}
+            onDelete={handleDeleteCertificate}
          />
       )}
 
@@ -378,20 +379,26 @@ function UploadCertificateModal({ onClose, onUpload }) {
    const [title, setTitle] = useState("");
    const [issuer, setIssuer] = useState("");
    const [date, setDate] = useState("");
+   const [uploading, setUploading] = useState(false);
    
-   const handleSubmit = (e) => {
+   const handleSubmit = async (e) => {
       e.preventDefault();
-      const newCert = {
-         id: `c_${Date.now()}`,
-         title,
-         issuer,
-         issueDate: date,
-         verified: false, // User uploads are unverified initially
-         type: "Certification",
-         previewImage: file ? URL.createObjectURL(file) : null,
-         url: "#"
-      };
-      onUpload(newCert);
+      setUploading(true);
+      try {
+        const certData = {
+           title,
+           issuer,
+           issueDate: date,
+           type: "Certification",
+           previewImage: file ? URL.createObjectURL(file) : null,
+           file: file
+        };
+        await onUpload(certData);
+      } catch (err) {
+        console.error("Upload error:", err);
+      } finally {
+        setUploading(false);
+      }
    };
 
    return (
@@ -428,7 +435,9 @@ function UploadCertificateModal({ onClose, onUpload }) {
 
                <div className="pt-4 flex justify-end gap-3">
                   <button type="button" onClick={onClose} className="px-5 py-2 text-gray-600 font-bold text-sm hover:bg-gray-100 rounded-lg">Cancel</button>
-                  <button type="submit" className="px-6 py-2 bg-blue-600 text-white font-bold text-sm rounded-lg shadow-md hover:bg-blue-700">Upload</button>
+                  <button type="submit" disabled={uploading} className={`px-6 py-2 text-white font-bold text-sm rounded-lg shadow-md ${uploading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                    {uploading ? 'Uploading...' : 'Upload'}
+                  </button>
                </div>
             </form>
          </div>

@@ -1,5 +1,5 @@
 // FILE: Assessments.jsx
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   PlusCircleIcon,
   DocumentTextIcon,
@@ -14,64 +14,69 @@ import {
   ChartBarIcon,
   DocumentPlusIcon
 } from "@heroicons/react/24/outline";
-
-/* -----------------------------------------------------------------------
-   MOCK DATA
------------------------------------------------------------------------- */
-const SAMPLE_ASSIGNMENTS = [
-  {
-    id: 1,
-    title: "Weekly Log – Module 3",
-    category: "Log",
-    due: "2025-02-10",
-    status: "Published",
-    pdf: "/sample.pdf",
-    rubrics: [
-      { criteria: "Code Quality", max: 20 },
-      { criteria: "Documentation", max: 10 },
-      { criteria: "Logic", max: 30 },
-    ],
-  },
-  {
-    id: 2,
-    title: "Final Capstone Project",
-    category: "Capstone",
-    due: "2025-03-15",
-    status: "Draft",
-    pdf: "/sample.pdf",
-    rubrics: [
-      { criteria: "Innovation", max: 50 },
-      { criteria: "Execution", max: 50 },
-    ],
-  },
-  {
-    id: 3,
-    title: "Database Design Quiz",
-    category: "Quiz",
-    due: "2025-02-20",
-    status: "Published",
-    pdf: null,
-    rubrics: [{ criteria: "Correct Answers", max: 100 }],
-  },
-];
+import facultyService from "../../../services/Facultyservice";
 
 /* -----------------------------------------------------------------------
    MAIN COMPONENT
 ------------------------------------------------------------------------ */
 export default function Assessments() {
-  const [assignments, setAssignments] = useState(SAMPLE_ASSIGNMENTS);
+  const [assignments, setAssignments] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [selectedClassId, setSelectedClassId] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   
   // Search & Filter State
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("All");
 
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  useEffect(() => {
+    if (selectedClassId) {
+      fetchAssignments();
+    }
+  }, [selectedClassId]);
+
+  const fetchClasses = async () => {
+    try {
+      const classesData = await facultyService.getClasses();
+      setClasses(classesData);
+      if (classesData.length > 0) {
+        setSelectedClassId(classesData[0].id || classesData[0]._id);
+      }
+    } catch (err) {
+      console.error("Error fetching classes:", err);
+      setError("Failed to load classes");
+    }
+  };
+
+  const fetchAssignments = async () => {
+    if (!selectedClassId) return;
+    
+    try {
+      setLoading(true);
+      const assignmentsData = await facultyService.getAssignments(selectedClassId);
+      setAssignments(assignmentsData);
+    } catch (err) {
+      console.error("Error fetching assignments:", err);
+      setError("Failed to load assignments");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Derived State (Filtering Logic)
   const filteredAssignments = useMemo(() => {
     return assignments.filter((a) => {
-      const matchesSearch = a.title.toLowerCase().includes(search.toLowerCase());
-      const matchesCategory = filterCat === "All" || a.category === filterCat;
+      const title = a.title || a.name || "";
+      const category = a.category || a.type || "";
+      const matchesSearch = title.toLowerCase().includes(search.toLowerCase());
+      const matchesCategory = filterCat === "All" || category === filterCat;
       return matchesSearch && matchesCategory;
     });
   }, [assignments, search, filterCat]);
@@ -79,9 +84,56 @@ export default function Assessments() {
   // Derived Stats
   const stats = {
     total: assignments.length,
-    pending: assignments.filter(a => a.status === 'Draft').length,
-    active: assignments.filter(a => a.status === 'Published').length
+    pending: assignments.filter(a => (a.status || a.published) === 'Draft' || a.published === false).length,
+    active: assignments.filter(a => (a.status || a.published) === 'Published' || a.published === true).length
   };
+
+  const handleCreateAssignment = async (assignmentData) => {
+    if (!selectedClassId) {
+      alert("Please select a class first");
+      return;
+    }
+    
+    try {
+      const newAssignment = await facultyService.createAssignment(selectedClassId, assignmentData);
+      setAssignments(prev => [newAssignment, ...prev]);
+      setCreateOpen(false);
+    } catch (err) {
+      console.error("Error creating assignment:", err);
+      alert("Failed to create assignment");
+    }
+  };
+
+  const handleDeleteAssignment = async (assignmentId) => {
+    if (!confirm("Are you sure you want to delete this assignment?")) return;
+    
+    try {
+      await facultyService.deleteAssignment(assignmentId);
+      setAssignments(prev => prev.filter(a => (a.id || a._id) !== assignmentId));
+    } catch (err) {
+      console.error("Error deleting assignment:", err);
+      alert("Failed to delete assignment");
+    }
+  };
+
+  if (error && !loading) {
+    return (
+      <div className="min-h-screen bg-slate-50/50 p-6 md:p-10">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+            <p className="font-semibold">Error</p>
+            <p className="text-sm mt-1">{error}</p>
+            <button 
+              onClick={fetchAssignments}
+              className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-10 font-sans">
@@ -96,12 +148,32 @@ export default function Assessments() {
 
           <button
             onClick={() => setCreateOpen(true)}
-            className="group flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-lg shadow-sm hover:bg-indigo-700 hover:shadow-md active:transform active:scale-95 transition-all duration-200 font-medium"
+            disabled={!selectedClassId}
+            className="group flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-lg shadow-sm hover:bg-indigo-700 hover:shadow-md active:transform active:scale-95 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <PlusCircleIcon className="w-5 h-5 group-hover:rotate-90 transition-transform" />
             Create Assignment
           </button>
         </div>
+
+        {/* Class Selector */}
+        {classes.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium mb-2">Select Class</label>
+            <select
+              value={selectedClassId || ""}
+              onChange={(e) => setSelectedClassId(e.target.value)}
+              className="w-full md:w-1/3 border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            >
+              <option value="">-- Select a class --</option>
+              {classes.map((cls) => (
+                <option key={cls.id || cls._id} value={cls.id || cls._id}>
+                  {cls.className || cls.name} ({cls.classCode || cls.code})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* --- STATS DASHBOARD --- */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -157,49 +229,62 @@ export default function Assessments() {
         </div>
 
         {/* --- GRID LIST --- */}
-        {filteredAssignments.length > 0 ? (
+        {loading ? (
+          <div className="py-20 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+            <p className="mt-4 text-slate-600">Loading assignments...</p>
+          </div>
+        ) : filteredAssignments.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredAssignments.map((a) => (
-              <div
-                key={a.id}
-                onClick={() => setSelected(a)}
-                className="group cursor-pointer bg-white rounded-xl p-6 shadow-sm ring-1 ring-slate-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
-              >
-                {/* Decorative top border */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            {filteredAssignments.map((a) => {
+              const assignmentId = a.id || a._id;
+              const title = a.title || a.name || "Untitled";
+              const category = a.category || a.type || "Assignment";
+              const dueDate = a.due || a.dueDate || a.deadline || "No deadline";
+              const status = a.status || (a.published ? 'Published' : 'Draft');
+              
+              return (
+                <div
+                  key={assignmentId}
+                  onClick={() => setSelected(a)}
+                  className="group cursor-pointer bg-white rounded-xl p-6 shadow-sm ring-1 ring-slate-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
+                >
+                  {/* Decorative top border */}
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
-                <div className="flex justify-between items-start mb-4">
-                  <div className={`p-3 rounded-lg ${
-                      a.category === 'Capstone' ? 'bg-purple-50 text-purple-600' : 'bg-indigo-50 text-indigo-600'
-                  }`}>
-                    <DocumentTextIcon className="w-6 h-6" />
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={`p-3 rounded-lg ${
+                        category === 'Capstone' ? 'bg-purple-50 text-purple-600' : 'bg-indigo-50 text-indigo-600'
+                    }`}>
+                      <DocumentTextIcon className="w-6 h-6" />
+                    </div>
+                    
+                    {/* Status Badge */}
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
+                      status === 'Published' 
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
+                        : 'bg-slate-100 text-slate-600 border-slate-200'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${status === 'Published' ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+                      {status}
+                    </span>
                   </div>
+
+                  <h2 className="font-bold text-lg text-slate-900 mb-1 group-hover:text-indigo-600 transition-colors line-clamp-1">
+                    {title}
+                  </h2>
                   
-                  {/* Status Badge */}
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
-                    a.status === 'Published' 
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
-                      : 'bg-slate-100 text-slate-600 border-slate-200'
-                  }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${a.status === 'Published' ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
-                    {a.status}
-                  </span>
-                </div>
-
-                <h2 className="font-bold text-lg text-slate-900 mb-1 group-hover:text-indigo-600 transition-colors line-clamp-1">
-                  {a.title}
-                </h2>
-                
-                <div className="flex items-center gap-4 mt-4 text-sm text-slate-500">
-                  <div className="flex items-center gap-1.5">
-                    <CalendarIcon className="w-4 h-4" />
-                    <span>{a.due}</span>
+                  <div className="flex items-center gap-4 mt-4 text-sm text-slate-500">
+                    <div className="flex items-center gap-1.5">
+                      <CalendarIcon className="w-4 h-4" />
+                      <span>{typeof dueDate === 'string' ? dueDate : new Date(dueDate).toLocaleDateString()}</span>
+                    </div>
+                    <div className="h-1 w-1 rounded-full bg-slate-300"></div>
+                    <span>{category}</span>
                   </div>
-                  <div className="h-1 w-1 rounded-full bg-slate-300"></div>
-                  <span>{a.category}</span>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           /* --- EMPTY STATE --- */

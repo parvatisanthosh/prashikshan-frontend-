@@ -1,5 +1,5 @@
 // FILE: PendingReviews.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   CheckCircleIcon,
   ChatBubbleLeftRightIcon,
@@ -9,34 +9,7 @@ import {
   MagnifyingGlassIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/solid";
-
-// Mock Data
-const PENDING_LOGS = [
-  {
-    id: 1,
-    student: "Aditi Verma",
-    title: "Python Log – Week 4",
-    description: "Added threading module + CSV parser",
-    submitted: "2 hrs ago",
-    urgency: "Urgent",
-  },
-  {
-    id: 2,
-    student: "Rahul Singh",
-    title: "Internship Report – Week 3",
-    description: "Worked on backend APIs & caching layer",
-    submitted: "5 hrs ago",
-    urgency: "Pending",
-  },
-  {
-    id: 3,
-    student: "Sneha Patel",
-    title: "Capstone Proposal",
-    description: "AI-powered attendance tracker drafted",
-    submitted: "1 day ago",
-    urgency: "Pending",
-  },
-];
+import facultyService from "../../../services/Facultyservice";
 
 // --------------------------------------------------
 // ACTION MODAL (Responsive Updates)
@@ -185,11 +158,68 @@ function ReviewItem({ log, onApprove, onRequestChanges }) {
 // MAIN COMPONENT (Responsive Updates)
 // --------------------------------------------------
 export default function PendingReviews() {
-  const [logs, setLogs] = useState(PENDING_LOGS);
+  const [logs, setLogs] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [selectedClassId, setSelectedClassId] = useState(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [selectedReview, setSelectedReview] = useState(null);
   const [actionType, setActionType] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  useEffect(() => {
+    if (selectedClassId) {
+      fetchPendingReviews();
+    }
+  }, [selectedClassId]);
+
+  const fetchClasses = async () => {
+    try {
+      const classesData = await facultyService.getClasses();
+      setClasses(classesData);
+      if (classesData.length > 0) {
+        setSelectedClassId(classesData[0].id || classesData[0]._id);
+      }
+    } catch (err) {
+      console.error("Error fetching classes:", err);
+      setError("Failed to load classes");
+    }
+  };
+
+  const fetchPendingReviews = async () => {
+    if (!selectedClassId) return;
+    
+    try {
+      setLoading(true);
+      const assignments = await facultyService.getAssignments(selectedClassId);
+      // Filter for pending submissions - adapt based on your API response
+      const pendingSubmissions = assignments.flatMap(assignment => 
+        (assignment.submissions || [])
+          .filter(sub => sub.status === 'pending' || !sub.graded)
+          .map(sub => ({
+            id: sub.id || sub._id,
+            student: sub.studentName || sub.student?.name || "Unknown Student",
+            title: assignment.title || assignment.name,
+            description: sub.description || assignment.description || "",
+            submitted: sub.submittedAt || sub.createdAt || "Recently",
+            urgency: sub.urgent || sub.priority || "Pending",
+            assignmentId: assignment.id || assignment._id,
+            submissionId: sub.id || sub._id
+          }))
+      );
+      setLogs(pendingSubmissions);
+    } catch (err) {
+      console.error("Error fetching pending reviews:", err);
+      setError("Failed to load pending reviews");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredLogs = logs.filter((log) => {
     const matchesSearch =
@@ -202,6 +232,25 @@ export default function PendingReviews() {
     return matchesSearch && matchesFilter;
   });
 
+  if (error && !loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 p-4 md:p-10">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+            <p className="font-semibold">Error</p>
+            <p className="text-sm mt-1">{error}</p>
+            <button 
+              onClick={fetchPendingReviews}
+              className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     // RESPONSIVE: p-4 mobile, p-10 desktop
     <div className="min-h-screen bg-slate-50 p-4 md:p-10 font-sans">
@@ -212,6 +261,25 @@ export default function PendingReviews() {
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Pending Reviews</h1>
           <p className="text-slate-500 mt-1 text-sm md:text-base">Review and respond to student submissions.</p>
         </div>
+
+        {/* Class Selector */}
+        {classes.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium mb-2">Select Class</label>
+            <select
+              value={selectedClassId || ""}
+              onChange={(e) => setSelectedClassId(e.target.value)}
+              className="w-full md:w-1/3 border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            >
+              <option value="">-- Select a class --</option>
+              {classes.map((cls) => (
+                <option key={cls.id || cls._id} value={cls.id || cls._id}>
+                  {cls.className || cls.name} ({cls.classCode || cls.code})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Search + Filters */}
         <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -246,33 +314,42 @@ export default function PendingReviews() {
 
         {/* Review Items */}
         <div className="space-y-4">
-          {filteredLogs.map((log) => (
-            <ReviewItem
-              key={log.id}
-              log={log}
-              onApprove={() => {
-                setSelectedReview(log);
-                setActionType("approve");
-              }}
-              onRequestChanges={() => {
-                setSelectedReview(log);
-                setActionType("changes");
-              }}
-            />
-          ))}
-
-          {filteredLogs.length === 0 && (
+          {loading ? (
+            <div className="py-20 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+              <p className="mt-4 text-slate-600">Loading pending reviews...</p>
+            </div>
+          ) : filteredLogs.length > 0 ? (
+            filteredLogs.map((log) => (
+              <ReviewItem
+                key={log.id}
+                log={log}
+                onApprove={() => {
+                  setSelectedReview(log);
+                  setActionType("approve");
+                }}
+                onRequestChanges={() => {
+                  setSelectedReview(log);
+                  setActionType("changes");
+                }}
+              />
+            ))
+          ) : (
             <div className="py-12 text-center bg-white rounded-xl border border-dashed border-slate-300">
                 <div className="mx-auto w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
                     <DocumentTextIcon className="w-6 h-6 text-slate-400" />
                 </div>
-                <p className="text-slate-500 font-medium">No matching reviews found.</p>
-                <button 
-                    onClick={() => {setSearch(''); setFilter('All');}}
-                    className="text-indigo-600 text-sm mt-2 hover:underline"
-                >
-                    Clear filters
-                </button>
+                <p className="text-slate-500 font-medium">
+                  {selectedClassId ? "No matching reviews found." : "Please select a class to view pending reviews."}
+                </p>
+                {selectedClassId && filteredLogs.length === 0 && logs.length > 0 && (
+                  <button 
+                      onClick={() => {setSearch(''); setFilter('All');}}
+                      className="text-indigo-600 text-sm mt-2 hover:underline"
+                  >
+                      Clear filters
+                  </button>
+                )}
             </div>
           )}
         </div>

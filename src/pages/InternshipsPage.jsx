@@ -3,211 +3,7 @@ import React, { useEffect, useState, useRef } from "react";
 import Navbar from "../components/studentdashboard/Navbar.jsx";
 import Sidebar from "../components/studentdashboard/sidebar.jsx";
 import Footer from "../components/studentdashboard/Footer.jsx";
-
-const USE_MOCK = true;
-
-const MOCK_DATA = [
-  {
-    id: "m1",
-    title: "Frontend Developer Intern",
-    company: "BrightApps Pvt Ltd",
-    tagline: "Building the next gen SaaS",
-    location: "Hyderabad",
-    stipendMin: 15000,
-    stipendMax: 20000,
-    durationText: "3 Months",
-    description: "Build responsive UI components, collaborate with designers and backend engineers to ship features. Experience with React and Tailwind CSS is mandatory.",
-    skills: ["React", "Tailwind", "TypeScript", "Redux"],
-    postedAgo: "3 days ago",
-    feature: "Fast response",
-    applicants: 120,
-    category: "Engineering",
-    workMode: "On-site",
-    startDate: "2023-12-15",
-    badge: "Hiring",
-    logoColor: "bg-teal-100 text-teal-600"
-  },
-  {
-    id: "m2",
-    title: "Product Design Intern",
-    company: "Creo Studio",
-    tagline: "Design that speaks",
-    location: "Bangalore",
-    stipendMin: 10000,
-    stipendMax: 15000,
-    durationText: "6 Months",
-    description: "Work closely with the product team to design user flows and wireframes. Proficiency in Figma and Adobe Creative Suite is required.",
-    skills: ["Figma", "UI/UX", "Prototyping", "Wireframing"],
-    postedAgo: "5 hours ago",
-    feature: "Early Applicant",
-    applicants: 45,
-    category: "Design",
-    workMode: "Hybrid",
-    startDate: "2024-01-10",
-    badge: "New",
-    logoColor: "bg-purple-100 text-purple-600"
-  },
-  {
-    id: "m3",
-    title: "Backend Engineer Intern",
-    company: "DataFlow Systems",
-    tagline: "Scalable backend solutions",
-    location: "Pune",
-    stipendMin: 20000,
-    stipendMax: 30000,
-    durationText: "6 Months",
-    description: "Assist in developing and maintaining server-side logic. You will work with Node.js and MongoDB to build scalable APIs.",
-    skills: ["Node.js", "Express", "MongoDB", "AWS"],
-    postedAgo: "1 week ago",
-    feature: "PPO Available",
-    applicants: 210,
-    category: "Engineering",
-    workMode: "Remote",
-    startDate: "2024-01-05",
-    badge: "Hot",
-    logoColor: "bg-blue-100 text-blue-600"
-  },
-  {
-    id: "m4",
-    title: "Digital Marketing Intern",
-    company: "Growth Hacking Co.",
-    tagline: "Accelerating brand growth",
-    location: "Gurgaon",
-    stipendMin: 8000,
-    stipendMax: 12000,
-    durationText: "2 Months",
-    description: "Manage social media accounts, create engaging content, and analyze marketing campaigns. Strong communication skills are a plus.",
-    skills: ["SEO", "Social Media", "Google Analytics", "Canva"],
-    postedAgo: "2 days ago",
-    feature: "Certificate",
-    applicants: 85,
-    category: "Marketing",
-    workMode: "Remote",
-    startDate: "2023-12-20",
-    badge: "Active",
-    logoColor: "bg-pink-100 text-pink-600"
-  },
-  {
-    id: "m5",
-    title: "Data Science Intern",
-    company: "Insight Analytics",
-    tagline: "Turning data into decisions",
-    location: "Mumbai",
-    stipendMin: 25000,
-    stipendMax: 35000,
-    durationText: "6 Months",
-    description: "Analyze large datasets to extract meaningful insights. Experience with Python, Pandas, and machine learning libraries is preferred.",
-    skills: ["Python", "Machine Learning", "SQL", "Pandas"],
-    postedAgo: "1 day ago",
-    feature: "High Stipend",
-    applicants: 350,
-    category: "Data Science",
-    workMode: "Hybrid",
-    startDate: "2024-02-01",
-    badge: "Popular",
-    logoColor: "bg-green-100 text-green-600"
-  },
-  {
-    id: "m6",
-    title: "Content Writer Intern",
-    company: "StoryTeller Media",
-    tagline: "Weaving words",
-    location: "Noida",
-    stipendMin: 5000,
-    stipendMax: 8000,
-    durationText: "3 Months",
-    description: "Write creative blogs and articles for our clients. Must have impeccable grammar and a flair for storytelling.",
-    skills: ["Creative Writing", "Blogging", "Research", "Copywriting"],
-    postedAgo: "4 hours ago",
-    feature: "Flexible Hours",
-    applicants: 60,
-    category: "Content",
-    workMode: "Remote",
-    startDate: "Immediate",
-    badge: "Urgent",
-    logoColor: "bg-yellow-100 text-yellow-600"
-  },
-  {
-    id: "m7",
-    title: "HR Operations Intern",
-    company: "People First",
-    tagline: "Employees are our asset",
-    location: "Chennai",
-    stipendMin: 10000,
-    stipendMax: 12000,
-    durationText: "4 Months",
-    description: "Assist the HR team in recruitment, onboarding, and employee engagement activities.",
-    skills: ["Communication", "MS Office", "Recruitment", "Management"],
-    postedAgo: "3 days ago",
-    feature: "Letter of Rec",
-    applicants: 30,
-    category: "HR",
-    workMode: "On-site",
-    startDate: "2024-01-15",
-    badge: "Hiring",
-    logoColor: "bg-indigo-100 text-indigo-600"
-  },
-  {
-    id: "m8",
-    title: "Business Analyst Intern",
-    company: "FinTech Corp",
-    tagline: "Simplifying finance",
-    location: "Bangalore",
-    stipendMin: 18000,
-    stipendMax: 25000,
-    durationText: "6 Months",
-    description: "Bridge the gap between IT and business using data analytics. Assess processes and determine requirements.",
-    skills: ["Excel", "SQL", "Business Analysis", "Documentation"],
-    postedAgo: "6 days ago",
-    feature: "PPO Available",
-    applicants: 150,
-    category: "Business",
-    workMode: "Hybrid",
-    startDate: "2024-01-01",
-    badge: "Featured",
-    logoColor: "bg-orange-100 text-orange-600"
-  },
-  {
-    id: "m9",
-    title: "React Native Developer",
-    company: "Appify Mobile",
-    tagline: "Apps for everyone",
-    location: "Remote",
-    stipendMin: 15000,
-    stipendMax: 22000,
-    durationText: "3 Months",
-    description: "Develop cross-platform mobile applications. Must be familiar with React Native and mobile UI paradigms.",
-    skills: ["React Native", "JavaScript", "Mobile Dev", "API Integration"],
-    postedAgo: "2 days ago",
-    feature: "Remote",
-    applicants: 95,
-    category: "Engineering",
-    workMode: "Remote",
-    startDate: "2023-12-25",
-    badge: "Active",
-    logoColor: "bg-red-100 text-red-600"
-  },
-  {
-    id: "m10",
-    title: "Video Editor Intern",
-    company: "Streamline Studios",
-    tagline: "Visual storytelling",
-    location: "Mumbai",
-    stipendMin: 12000,
-    stipendMax: 18000,
-    durationText: "4 Months",
-    description: "Edit high-quality video content for YouTube and social media. Proficiency in Premiere Pro or After Effects is essential.",
-    skills: ["Premiere Pro", "After Effects", "Video Editing", "Color Grading"],
-    postedAgo: "1 week ago",
-    feature: "Creative Freedom",
-    applicants: 70,
-    category: "Design",
-    workMode: "On-site",
-    startDate: "2024-01-05",
-    badge: "Hiring",
-    logoColor: "bg-gray-100 text-gray-700"
-  }
-];
+import studentService from "../services/studentService";
 
 export default function InternshipsPage() {
   // --- Sidebar / Nav Logic ---
@@ -219,7 +15,9 @@ export default function InternshipsPage() {
   // --- Filter State ---
   const [query, setQuery] = useState("");
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [allItems, setAllItems] = useState([]); // Store all internships from API
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
    
   const [selectedCategories, setSelectedCategories] = useState(new Set());
   const [selectedLocations, setSelectedLocations] = useState(new Set());
@@ -250,15 +48,85 @@ export default function InternshipsPage() {
     setStartDateAfter("");
     setSelectedDurations(new Set());
     setSelectedSpecial(new Set());
-    fetchInternships();
   }
 
-  function fetchInternships() {
-    setLoading(true);
+  // --- Initial Fetch from API ---
+  useEffect(() => {
+    async function fetchFromAPI() {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await studentService.getInternships();
+        const internships = response.internships || response || [];
+        
+        // Transform backend data to our format
+        const transformedData = internships.map(item => ({
+          id: item.id,
+          title: item.title || item.position,
+          company: item.company?.name || item.companyName || "Unknown Company",
+          tagline: item.company?.tagline || item.tagline || "",
+          location: item.location || "Remote",
+          stipendMin: item.stipendMin || item.stipend || 0,
+          stipendMax: item.stipendMax || item.stipend || 0,
+          durationText: item.duration || "3 Months",
+          description: item.description || "",
+          skills: item.skills || item.requirements || [],
+          postedAgo: item.createdAt ? getTimeAgo(item.createdAt) : "Recently",
+          feature: item.feature || "",
+          applicants: item.applicationsCount || item.applicants || 0,
+          category: item.category || item.type || "General",
+          workMode: item.workMode || item.type || "Remote",
+          startDate: item.startDate || "Flexible",
+          badge: item.badge || (item.isUrgent ? "Urgent" : item.isFeatured ? "Featured" : ""),
+          logoColor: getLogoColor(item.category || "General")
+        }));
+        
+        setAllItems(transformedData);
+        setItems(transformedData);
+      } catch (err) {
+        console.error("Error fetching internships:", err);
+        setError(err.message || "Failed to load internships");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchFromAPI();
+  }, []);
+
+  // Helper to get time ago string
+  function getTimeAgo(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "1 day ago";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} week(s) ago`;
+    return `${Math.floor(diffDays / 30)} month(s) ago`;
+  }
+
+  // Helper to get logo color based on category
+  function getLogoColor(category) {
+    const colors = {
+      "Engineering": "bg-blue-100 text-blue-600",
+      "Design": "bg-purple-100 text-purple-600",
+      "Marketing": "bg-pink-100 text-pink-600",
+      "Data Science": "bg-green-100 text-green-600",
+      "Content": "bg-yellow-100 text-yellow-600",
+      "HR": "bg-indigo-100 text-indigo-600",
+      "Business": "bg-orange-100 text-orange-600",
+      "Sales": "bg-red-100 text-red-600"
+    };
+    return colors[category] || "bg-gray-100 text-gray-600";
+  }
+
+  // --- Client-side filtering ---
+  function applyFilters() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     
     debounceRef.current = setTimeout(() => {
-      let filtered = MOCK_DATA;
+      let filtered = [...allItems];
 
       // 1. Text Search
       if (query) {
@@ -296,11 +164,27 @@ export default function InternshipsPage() {
       }
 
       setItems(filtered);
-      setLoading(false);
     }, 400);
   }
 
-  useEffect(() => { fetchInternships(); }, [query, selectedCategories, selectedLocations, selectedWorkModes, minStipend, startDateAfter, selectedDurations, selectedSpecial]);
+  useEffect(() => { 
+    if (allItems.length > 0) {
+      applyFilters(); 
+    }
+  }, [query, selectedCategories, selectedLocations, selectedWorkModes, minStipend, startDateAfter, selectedDurations, selectedSpecial, allItems]);
+
+  // Handle apply to internship
+  const handleApplyToInternship = async (internshipId) => {
+    try {
+      await studentService.applyToInternship(internshipId, {
+        coverLetter: "I am interested in this position."
+      });
+      alert("Application submitted successfully!");
+    } catch (err) {
+      console.error("Error applying:", err);
+      alert(err.message || "Failed to submit application");
+    }
+  };
 
   // --- CONSTANTS ---
   const CATEGORY_OPTIONS = ["Engineering", "Marketing", "Sales", "Design", "Operations"];
@@ -537,7 +421,7 @@ export default function InternshipsPage() {
         </div>
       </div>
 
-      {selectedInternship && <ApplyModal internship={selectedInternship} onClose={() => setSelectedInternship(null)} />}
+      {selectedInternship && <ApplyModal internship={selectedInternship} onClose={() => setSelectedInternship(null)} onApply={handleApplyToInternship} />}
      
     </div>
   );
@@ -652,9 +536,23 @@ function LargeInternshipCard({ data, onApply }) {
 }
 
 // 5. Apply Modal (Detailed View)
-function ApplyModal({ internship, onClose }) {
+function ApplyModal({ internship, onClose, onApply }) {
+  const [applying, setApplying] = useState(false);
+  
   // Prevent click bubbling to backdrop
   const handleModalClick = (e) => e.stopPropagation();
+
+  const handleApply = async () => {
+    setApplying(true);
+    try {
+      await onApply(internship.id);
+      onClose();
+    } catch (err) {
+      // Error handled in parent
+    } finally {
+      setApplying(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -737,8 +635,12 @@ function ApplyModal({ internship, onClose }) {
            <button onClick={onClose} className="px-5 py-2.5 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition-colors text-sm">
              Close
            </button>
-           <button onClick={() => {alert("Application Submitted!"); onClose();}} className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-md text-sm">
-             Apply Now
+           <button 
+             onClick={handleApply} 
+             disabled={applying}
+             className={`px-8 py-2.5 text-white font-semibold rounded-lg transition-colors shadow-md text-sm ${applying ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+           >
+             {applying ? 'Applying...' : 'Apply Now'}
            </button>
         </div>
       </div>

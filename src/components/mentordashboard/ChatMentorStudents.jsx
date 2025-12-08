@@ -6,7 +6,7 @@ import {
     PaperClipIcon,
     FaceSmileIcon
 } from '@heroicons/react/24/solid';
-import { getChatContacts, getChatMessages, sendChatMessage } from './apiService';
+import mentorService from '../../services/mentorService';
 
 export default function ChatMentorStudents() {
     const [contacts, setContacts] = useState([]);
@@ -22,7 +22,7 @@ export default function ChatMentorStudents() {
         async function fetchContacts() {
             setLoading(true);
             try {
-                const data = await getChatContacts();
+                const data = await mentorService.getChatContacts();
                 setContacts(data);
             } catch (error) {
                 console.error('Error fetching contacts:', error);
@@ -39,7 +39,7 @@ export default function ChatMentorStudents() {
         async function fetchMessages() {
             if (selectedContact && !messages[selectedContact.id]) {
                 try {
-                    const data = await getChatMessages(selectedContact.id);
+                    const data = await mentorService.getChatMessages(selectedContact.id);
                     setMessages(prev => ({
                         ...prev,
                         [selectedContact.id]: data
@@ -69,7 +69,7 @@ export default function ChatMentorStudents() {
         if (!newMessage.trim() || !selectedContact) return;
 
         try {
-            const result = await sendChatMessage(selectedContact.id, newMessage);
+            const result = await mentorService.sendChatMessage(selectedContact.id, newMessage);
             
             setMessages(prev => ({
                 ...prev,
