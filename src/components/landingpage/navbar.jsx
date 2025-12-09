@@ -1,9 +1,73 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/solid";
+import { Bars3Icon, XMarkIcon, GlobeAltIcon } from "@heroicons/react/24/solid";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Initialize Google Translate
+  useEffect(() => {
+    // Add Google Translate script
+    const addScript = document.createElement("script");
+    addScript.setAttribute(
+      "src",
+      "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+    );
+    document.body.appendChild(addScript);
+
+    // Initialize Google Translate widget
+    window.googleTranslateElementInit = () => {
+      new window.google.translate.TranslateElement(
+        {
+          pageLanguage: "en",
+          includedLanguages: "es,fr,de,it,pt,ru,zh-CN,ja,ko,ar,hi,bn,pa,te,mr,ta,tr,vi,pl,uk,ro,nl,el,cs,sv,hu,th,id,ms,fil,fa,he",
+          layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
+          autoDisplay: false,
+        },
+        "google_translate_element"
+      );
+    };
+
+    // Add CSS to hide Google Translate banner
+    const style = document.createElement("style");
+    style.innerHTML = `
+      .goog-te-banner-frame.skiptranslate { 
+        display: none !important; 
+      } 
+      body { 
+        top: 0px !important; 
+      }
+      #google_translate_element {
+        display: inline-block;
+      }
+      .goog-te-gadget {
+        font-family: inherit !important;
+      }
+      .goog-te-gadget-simple {
+        background-color: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        font-size: 0.875rem !important;
+      }
+      .goog-te-gadget-simple .goog-te-menu-value span {
+        color: #4F46E5 !important;
+      }
+      .goog-te-gadget-simple .goog-te-menu-value span:hover {
+        color: #4338CA !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      // Cleanup
+      if (addScript.parentNode) {
+        addScript.parentNode.removeChild(addScript);
+      }
+      if (style.parentNode) {
+        style.parentNode.removeChild(style);
+      }
+    };
+  }, []);
 
   const NavLink = ({ to, children }) => (
     <Link
@@ -43,6 +107,12 @@ export default function Navbar() {
 
           {/* --- RIGHT SECTION BUTTONS (DESKTOP) --- */}
           <div className="hidden md:flex gap-3 items-center">
+            {/* Google Translate Widget */}
+            <div className="flex items-center gap-2 mr-2">
+              <GlobeAltIcon className="h-5 w-5 text-indigo-600" />
+              <div id="google_translate_element"></div>
+            </div>
+
             <Link to="/roleselect">
               <button className="px-6 py-2 text-sm font-semibold text-indigo-600 border border-indigo-300 rounded-lg bg-white hover:bg-indigo-50 active:scale-95 transition">
                 Sign In
@@ -87,6 +157,12 @@ export default function Navbar() {
           </div>
 
           <div className="px-4 pt-3 pb-4 border-t border-gray-200 space-y-3">
+            {/* Google Translate in Mobile Menu */}
+            <div className="flex items-center justify-center gap-2 py-2">
+              <GlobeAltIcon className="h-5 w-5 text-indigo-600" />
+              <div id="google_translate_element_mobile"></div>
+            </div>
+
             <Link to="/roleselect">
               <button className="w-full py-2 text-sm font-semibold text-indigo-600 border border-indigo-300 rounded-lg hover:bg-indigo-50 transition">
                 Sign In
@@ -101,6 +177,6 @@ export default function Navbar() {
           </div>
         </div>
       )}
-    </nav>
-  );
+    </nav>
+  );
 }

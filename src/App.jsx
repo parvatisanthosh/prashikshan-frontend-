@@ -9,6 +9,7 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import LandingPage from "./pages/LandingPage.jsx";
 import RoleSelectPage from "./pages/RoleSelectPage.jsx";
 
+import Gov from "../src/pages/GovPortal.jsx"
 
 // Student Pages
 import StudentSignUpPage from "./pages/StudentSignupPage.jsx";
@@ -49,7 +50,26 @@ import AdminDashboard from "./pages/AdminDashboard.jsx";
 // ChatbotFlow not present in `src/components`, removed.
 
 // Company dashboard wrapper removed because company context and pages are not available.
-
+import { CompanyProvider } from "./context/CompanyContext";
+import DashboardLayout from "./components/companydashboard/Layout/DashboardLayout";
+import Overview from "./pages/company/Overview";
+import CreateOpening from "./pages/company/CreateOpening";
+import Applicants from "./pages/company/Applicants";
+import Analytics from "./pages/company/Analytics";
+import Chat from "./pages/company/Chat";
+import StudentProfile from "./pages/company/StudentProfile";
+import SelectedStudents from "./pages/company/SelectedStudents";
+import RejectedStudents from "./pages/company/RejectedStudents";
+import RecruitedStudents from "./pages/company/RecruitedStudents";
+import UnderMaintenance from "./pages/company/UnderMaintenance";
+// Company Layout Wrapper Component
+const CompanyDashboardWrapper = () => {
+return (
+<CompanyProvider>
+<DashboardLayout />
+</CompanyProvider>
+);
+};
 export default function App() {
   return (
     <div className="bg-white text-gray-800 min-h-screen">
@@ -73,7 +93,24 @@ export default function App() {
         <Route path="/companylogin" element={<CompanyLoginPage />} />
         <Route path="/adminsignup" element={<AdminSignupPage />} />
         <Route path="/adminlogin" element={<AdminLoginPage />} />
-
+        <Route path="/govportal" element={<Gov />} />
+        
+        <Route path="/company" element={<CompanyDashboardWrapper />}>
+          <Route index element={<Overview />} />
+          <Route path="overview" element={<Overview />} />
+          <Route path="create-opening" element={<CreateOpening />} />
+          <Route path="applicants" element={<Applicants />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="selected-students" element={<SelectedStudents />} />
+          <Route path="rejected-students" element={<RejectedStudents />} />
+          <Route path="recruited-students" element={<RecruitedStudents />} />
+          <Route path="chat" element={<Chat />} />
+          <Route path="student/:id" element={<StudentProfile />} />
+          <Route path="settings" element={<UnderMaintenance />} />
+        
+          <Route path="help" element={<UnderMaintenance />} />
+          
+        </Route>
         {/* ==================== STUDENT PROTECTED ROUTES ==================== */}
         
         <Route 
@@ -84,6 +121,9 @@ export default function App() {
             </ProtectedRoute>
           } 
         />
+
+        
+
         
         <Route 
           path="/logbook" 
