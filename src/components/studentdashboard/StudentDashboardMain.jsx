@@ -23,19 +23,21 @@ export default function StudentDashboardMain() {
       setError(null);
       try {
         // Fetch all data in parallel
-        const [statsResponse, profileResponse, applicationsResponse, scheduleResponse, avatarResponse] = await Promise.all([
-          studentService.getDashboardStats().catch(() => ({})),
-          studentService.getProfile().catch(() => ({ profile: {} })),
-          studentService.getMyApplications().catch(() => ({ applications: [] })),
-          studentService.getSchedule().catch(() => ({ schedule: { assignments: [], sessions: [] } })),
-          studentService.getAvatarUrl().catch(() => ({ avatarURL: null }))
-        ]);
 
-        const profile = profileResponse?.profile || {};
-        const courses = []; // Courses endpoint not available yet
-        const applications = applicationsResponse?.applications || [];
-        const schedule = scheduleResponse?.schedule || { assignments: [], sessions: [] };
-        const avatarURL = avatarResponse?.avatarURL || null;
+            const [statsResponse, profileResponse, coursesResponse, applicationsResponse, scheduleResponse, avatarResponse] = await Promise.all([
+               studentService.getDashboardStats().catch(() => ({})),
+               studentService.getProfile().catch(() => ({ profile: {} })),
+               studentService.getCourses().catch(() => ({ courses: [] })),
+               studentService.getMyApplications().catch(() => ({ applications: [] })),
+               studentService.getSchedule().catch(() => ({ schedule: { assignments: [], sessions: [] } })),
+               studentService.getAvatarUrl().catch(() => ({ avatarURL: null }))
+            ]);
+
+            const profile = profileResponse?.profile || {};
+            const courses = coursesResponse?.courses || [];
+            const applications = applicationsResponse?.applications || [];
+            const schedule = scheduleResponse?.schedule || { assignments: [], sessions: [] };
+            const avatarURL = avatarResponse?.avatarURL || null;
 
         // Transform data to match component structure
         setData({
