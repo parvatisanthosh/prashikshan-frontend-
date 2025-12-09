@@ -13,6 +13,16 @@ class MentorService {
    * GET /mentor/stats
    * @returns {Promise<{totalStudents, upcomingSessions, completedSessions, pendingRequests}>}
    */
+  async getallMentors(){
+    try{
+      const response=await api.get('/mentor/all');
+      return response.data;
+    }catch(error){
+      throw error;
+      
+    }
+  }
+
   async getDashboardStats() {
     try {
       const response = await api.get('/mentor/stats');

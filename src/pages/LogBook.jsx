@@ -36,6 +36,7 @@ export default function LogbookPage() {
   const [activeTag, setActiveTag] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLog, setEditingLog] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   // --- Fetch Data ---
   useEffect(() => {
@@ -60,7 +61,6 @@ export default function LogbookPage() {
           title: entry.title,
           body: entry.content,
           tags: entry.tags || [],
-          project: entry.mood || "General",
           hours: 1, // Default hours
           createdAt: entry.date,
           status: "published"
@@ -118,38 +118,74 @@ export default function LogbookPage() {
 
   // Actions
   const handleSaveLog = async (logData) => {
+    setSaving(true);
     try {
+      console.log('💾 Saving log entry:', logData);
+      
       if (editingLog) {
         // Update existing entry
-        await studentService.updateLogbookEntry(editingLog.id, {
+        console.log('Updating entry:', editingLog.id);
+        const response = await studentService.updateLogbookEntry(editingLog.id, {
           title: logData.title,
           content: logData.body,
           tags: logData.tags,
           date: new Date().toISOString()
         });
-        setLogs(prev => prev.map(l => l.id === editingLog.id ? { ...l, ...logData } : l));
+        
+        console.log('✓ Entry updated:', response);
+        
+        // Update local state
+        setLogs(prev => prev.map(l => l.id === editingLog.id ? {
+          ...l,
+          title: logData.title,
+          body: logData.body,
+          tags: logData.tags,
+          hours: logData.hours || 1
+        } : l));
+        
+        alert('Log entry updated successfully! ✅');
       } else {
         // Create new entry
+        console.log('Creating new entry...');
         const response = await studentService.createLogbookEntry({
           title: logData.title,
           content: logData.body,
           tags: logData.tags,
-          date: new Date().toISOString(),
-          mood: logData.project || "neutral"
+          date: new Date().toISOString()
         });
+        
+        console.log('✓ Entry created:', response);
+        
+        // Add to local state
         const newLog = {
           id: response.entry?.id || `new_${Date.now()}`,
+          title: logData.title,
+          body: logData.body,
+          tags: logData.tags,
+          hours: logData.hours || 1,
           createdAt: new Date().toISOString(),
-          status: "published",
-          ...logData
+          status: "published"
         };
+        
         setLogs(prev => [newLog, ...prev]);
+        
+        // Update stats
+        setStats(prev => ({
+          ...prev,
+          totalLogs: prev.totalLogs + 1,
+          totalHours: prev.totalHours + (logData.hours || 1)
+        }));
+        
+        alert('Log entry created successfully! ✅');
       }
+      
       setIsModalOpen(false);
       setEditingLog(null);
     } catch (err) {
-      console.error("Error saving log:", err);
-      alert(err.message || "Failed to save log entry");
+      console.error("❌ Error saving log:", err);
+      alert(`Failed to save log entry: ${err.message}`);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -158,6 +194,11 @@ export default function LogbookPage() {
       try {
         await studentService.deleteLogbookEntry(id);
         setLogs(prev => prev.filter(l => l.id !== id));
+        setStats(prev => ({
+          ...prev,
+          totalLogs: prev.totalLogs - 1
+        }));
+        alert('Log entry deleted successfully! ✅');
       } catch (err) {
         console.error("Error deleting log:", err);
         alert(err.message || "Failed to delete log entry");
@@ -186,6 +227,7 @@ export default function LogbookPage() {
         completed: false 
       };
       setTodos(prev => [newTodo, ...prev]);
+      alert('Goal added successfully! ✅');
     } catch (err) {
       console.error("Error adding todo:", err);
       alert(err.message || "Failed to add goal");
@@ -196,6 +238,7 @@ export default function LogbookPage() {
     try {
       await studentService.deleteLogbookGoal(id);
       setTodos(prev => prev.filter(t => t.id !== id));
+      alert('Goal deleted successfully! ✅');
     } catch (err) {
       console.error("Error deleting todo:", err);
       alert(err.message || "Failed to delete goal");
@@ -219,7 +262,7 @@ export default function LogbookPage() {
     {/* 1. Global Navigation (Fixed) */}
                   <div className="sticky top-0 z-50 bg-white shadow-sm">
                     <Navbar
-                      user={{ name: "Asha Verma" }}
+                      user={{ name: user?.name || "Student" }}
                       onToggleSidebar={() => setSidebarOpen(true)}
                       onSearch={(q) => console.log("Search: " + q)}
                       onNavigate={(r) => handleNavigate(r)}
@@ -247,11 +290,11 @@ export default function LogbookPage() {
                
                <div className="grid grid-cols-2 gap-4 mb-4">
                   <div className="bg-blue-50 p-3 rounded-lg text-center">
-                     <div className="text-2xl font-bold text-blue-600">{logs.length}</div>
+                     <div className="text-2xl font-bold text-blue-600">{stats.totalLogs}</div>
                      <div className="text-xs text-blue-600 font-medium">Total Logs</div>
                   </div>
                   <div className="bg-indigo-50 p-3 rounded-lg text-center">
-                     <div className="text-2xl font-bold text-indigo-600">{stats?.totalHours}</div>
+                     <div className="text-2xl font-bold text-indigo-600">{stats.totalHours}</div>
                      <div className="text-xs text-indigo-600 font-medium">Hours Logged</div>
                   </div>
                </div>
@@ -259,7 +302,7 @@ export default function LogbookPage() {
                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
                   <span className="text-xs font-medium text-gray-500">Current Streak</span>
                   <div className="flex items-center gap-1">
-                     <span className="text-lg font-bold text-orange-500">🔥 {stats?.currentStreak}</span>
+                     <span className="text-lg font-bold text-orange-500">🔥 {stats.currentStreak}</span>
                      <span className="text-xs text-gray-400">days</span>
                   </div>
                </div>
@@ -383,7 +426,8 @@ export default function LogbookPage() {
         <LogEntryModal 
           log={editingLog} 
           onClose={() => { setIsModalOpen(false); setEditingLog(null); }} 
-          onSave={handleSaveLog} 
+          onSave={handleSaveLog}
+          saving={saving}
         />
       )}
     </div>
@@ -479,7 +523,7 @@ function TodoWidget({ todos, onAdd, onToggle, onDelete }) {
   );
 }
 
-function LogEntryModal({ log, onClose, onSave }) {
+function LogEntryModal({ log, onClose, onSave, saving }) {
   const [form, setForm] = useState({
     title: log?.title || "",
     body: log?.body || "",
@@ -490,31 +534,51 @@ function LogEntryModal({ log, onClose, onSave }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Validate
+    if (!form.title.trim()) {
+      alert('Please enter a title');
+      return;
+    }
+    
+    if (!form.body.trim()) {
+      alert('Please enter content');
+      return;
+    }
+    
+    console.log('📝 Form submitted:', form);
+    
+    // Call onSave with formatted data
     onSave({
-      ...form,
+      title: form.title.trim(),
+      body: form.body.trim(),
       tags: form.tags.split(",").map(t => t.trim()).filter(Boolean),
-      hours: Number(form.hours) || 0
+      hours: Number(form.hours) || 1,
+      project: form.project
     });
   };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={saving ? null : onClose} />
       <div className="bg-white rounded-2xl w-full max-w-2xl relative z-10 shadow-2xl p-6 animate-in fade-in zoom-in duration-200">
         <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
            <h2 className="text-xl font-bold text-gray-900">{log ? "Edit Entry" : "New Log Entry"}</h2>
-           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+           <button onClick={onClose} disabled={saving} className="text-gray-400 hover:text-gray-600 disabled:opacity-50">
+             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Title</label>
+              <label className="block text-xs font-bold text-gray-700 mb-1">Title *</label>
               <input 
                 required
                 value={form.title}
                 onChange={e => setForm({...form, title: e.target.value})}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                 placeholder="What did you work on today?"
+                disabled={saving}
               />
            </div>
 
@@ -525,6 +589,7 @@ function LogEntryModal({ log, onClose, onSave }) {
                    value={form.project}
                    onChange={e => setForm({...form, project: e.target.value})}
                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                   disabled={saving}
                  >
                     <option value="">Select Project</option>
                     <option value="Capstone Project">Capstone Project</option>
@@ -542,12 +607,13 @@ function LogEntryModal({ log, onClose, onSave }) {
                    onChange={e => setForm({...form, hours: e.target.value})}
                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                    placeholder="e.g. 2.5"
+                   disabled={saving}
                  />
               </div>
            </div>
 
            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Description</label>
+              <label className="block text-xs font-bold text-gray-700 mb-1">Description *</label>
               <textarea 
                 required
                 rows="6"
@@ -555,6 +621,7 @@ function LogEntryModal({ log, onClose, onSave }) {
                 onChange={e => setForm({...form, body: e.target.value})}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                 placeholder="Describe your progress, challenges, and learnings..."
+                disabled={saving}
               />
            </div>
 
@@ -565,12 +632,36 @@ function LogEntryModal({ log, onClose, onSave }) {
                 onChange={e => setForm({...form, tags: e.target.value})}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                 placeholder="e.g. React, Bugfix, Research"
+                disabled={saving}
               />
            </div>
 
            <div className="pt-4 flex justify-end gap-3">
-              <button type="button" onClick={onClose} className="px-5 py-2 text-gray-600 font-bold text-sm hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
-              <button type="submit" className="px-6 py-2 bg-blue-600 text-white font-bold text-sm rounded-lg shadow-md hover:bg-blue-700 transition-colors">Save Entry</button>
+              <button 
+                type="button" 
+                onClick={onClose} 
+                disabled={saving}
+                className="px-5 py-2 text-gray-600 font-bold text-sm hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                disabled={saving}
+                className="px-6 py-2 bg-blue-600 text-white font-bold text-sm rounded-lg shadow-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {saving ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  'Save Entry'
+                )}
+              </button>
            </div>
         </form>
       </div>
