@@ -268,8 +268,7 @@ For complete API documentation including all endpoints, refer to the Postman col
 
 ## Contact
 
-For queries and support:
-- Email: support@Prashikshan.com
+- contact-no: 9435141224 
 - Project Repository: https://github.com/parvatisanthosh/GapBridgers_Prashikshan
 
 
