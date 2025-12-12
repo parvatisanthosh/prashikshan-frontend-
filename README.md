@@ -253,14 +253,11 @@ For complete API documentation including all endpoints, refer to the Postman col
 
 **Smart India Hackathon 2024**
 
-| Role | Name | Contact |
-|------|------|---------|
-| Team Lead Divyam Gupta https://github.com/Divyam-Gupta2006 
-| Team member Vedant Sahu https://github.com/vedantsahu06
-| Team member Prayag Srivastava https://github.com/Prayag-Srivastava
-| Team member Suryansh Verma https://github.com/suryansh030
-| Team member Parvati Santhosh https://github.com/parvatisanthosh
-| Team member Tarush Verma https://github.com/Tarush-Verma
+
+
+Team
+Smart India Hackathon 2024
+RoleNameContactTeam Lead[Divyam Gupta][https://github.com/Divyam-Gupta2006]Team member[Vedant Sahu][https://github.com/vedantsahu06]Team member[Prayag Srivastava][https://github.com/Prayag-Srivastava]Team member[Parvati Santhosh][https://github.com/parvatisanthosh]Team member[Tarush Verma][https://github.com/Tarush-Verma]Team member[Name][https://github.com/Tarush-Verma]
  
 **Organization:** Indian Institute of Information Technology Nagpur
 
