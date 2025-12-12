@@ -1,4 +1,4 @@
-# EduSphere - Internship Management Platform
+# Prashikshan - Internship Management Platform
 
 A comprehensive digital platform bridging the gap between academia and industry through seamless internship management and career development.
 
@@ -22,7 +22,7 @@ A comprehensive digital platform bridging the gap between academia and industry 
 
 ## About
 
-EduSphere is an internship management platform developed for Smart India Hackathon 2025. The platform addresses the critical need for structured, accessible, and efficient internship management aligned with NEP 2020 guidelines, with special focus on accessibility for rural and underserved students.
+Prashikshan is an internship management platform developed for Smart India Hackathon 2025. The platform addresses the critical need for structured, accessible, and efficient internship management aligned with NEP 2020 guidelines, with special focus on accessibility for rural and underserved students.
 
 ### Vision
 
@@ -52,7 +52,7 @@ Current internship management systems face several challenges:
 - Inefficient matching between student skills and internship requirements
 - No personalized career guidance or learning paths
 
-EduSphere addresses these challenges through an inclusive, accessible platform with offline-first architecture, multilingual support, multi-channel communication (SMS, WhatsApp, voice), and AI/ML-powered intelligent matching and recommendation systems.
+Prashikshan addresses these challenges through an inclusive, accessible platform with offline-first architecture, multilingual support, multi-channel communication (SMS, WhatsApp, voice), and AI/ML-powered intelligent matching and recommendation systems.
 
 ---
 
@@ -176,7 +176,7 @@ EduSphere addresses these challenges through an inclusive, accessible platform w
 ```bash
 # Clone repository
 git clone https://github.com/parvatisanthosh/GapBridgers_Prashikshan
-cd edusphere
+cd EduSphere
 
 # Set up environment variables
 cp .env.example .env
@@ -262,10 +262,6 @@ For complete API documentation including all endpoints, refer to the Postman col
 | Team member | Parvati Santhosh | https://github.com/parvatisanthosh
 | Team member | Tarush Verma | https://github.com/Tarush-Verma
 
-Team
-Smart India Hackathon 2024
-RoleNameContactTeam Lead[Divyam Gupta][https://github.com/Divyam-Gupta2006]Team member[Vedant Sahu][https://github.com/vedantsahu06]Team member[Prayag Srivastava][https://github.com/Prayag-Srivastava]Team member[Parvati Santhosh][https://github.com/parvatisanthosh]Team member[Tarush Verma][https://github.com/Tarush-Verma]Team member[Name][https://github.com/Tarush-Verma]
- 
 **Organization:** Indian Institute of Information Technology Nagpur
 
 
@@ -273,7 +269,7 @@ RoleNameContactTeam Lead[Divyam Gupta][https://github.com/Divyam-Gupta2006]Team 
 ## Contact
 
 For queries and support:
-- Email: support@edusphere.com
+- Email: support@Prashikshan.com
 - Project Repository: https://github.com/parvatisanthosh/GapBridgers_Prashikshan
 
 
