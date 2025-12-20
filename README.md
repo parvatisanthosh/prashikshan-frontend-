@@ -162,6 +162,15 @@ Prashikshan addresses these challenges through an inclusive, accessible platform
 
 ---
 
+## Repositories
+
+This project is organized into separate repositories for frontend and backend:
+
+- **Backend:** [prashikshan-backend](https://github.com/parvatisanthosh/prashikshan-backend)
+- **Frontend:** [prashikshan-frontend](https://github.com/parvatisanthosh/prashikshan-frontend-)
+
+---
+
 ## Installation
 
 ### Prerequisites
@@ -175,8 +184,8 @@ Prashikshan addresses these challenges through an inclusive, accessible platform
 
 ```bash
 # Clone repository
-git clone https://github.com/parvatisanthosh/GapBridgers_Prashikshan
-cd EduSphere
+git clone --recurse-submodules https://github.com/parvatisanthosh/GapBridgers-Prashikshan
+cd GapBridgers-Prashikshan
 
 # Set up environment variables
 cp .env.example .env
@@ -251,7 +260,7 @@ For complete API documentation including all endpoints, refer to the Postman col
 
 ## Team
 
-**Smart India Hackathon 2024**
+**Smart India Hackathon 2025**
 
 | Role | Name | Contact |
 |------|------|---------|
